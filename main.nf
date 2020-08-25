@@ -2,13 +2,13 @@
 
 nextflow.enable.dsl=2
 
-/* define params */
-
-params {
-  input='./data/something.fastq'
-}
-
 /* import modules */
+include { say_hi; gatk0_index } from './modules/this_bin.nf'
 
 /* define workflow */
+
+workflow {
+  say_hi()
+//  gatk0_index()
+}
 

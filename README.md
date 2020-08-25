@@ -14,5 +14,6 @@ nextflow run HuffordLab/Maize_WGS_Build
 If on HPCC Condo:
 
 ```
+module load gcc/7.3.0-xegsmw4 nextflow
 nextflow run HuffordLab/Maize_WGS_Build -profile condo
 ```

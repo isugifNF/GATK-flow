@@ -14,11 +14,11 @@ if [ $# -ne 2 ] ; then
    exit 0
 fi
 
-module load samtools
-module load picard
-module load bwa
-module load bedtools2
-module load bioawk
+# module load samtools
+# module load picard
+# module load bwa
+# module load bedtools2
+# module load bioawk
 ref="$1"
 name="$2"
 window=10000000

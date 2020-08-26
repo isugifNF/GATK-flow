@@ -14,10 +14,10 @@ if [ $# -lt 1 ] ; then
    echo ""
    exit 0
 fi
-module load vcftools
-module load GIF/datamash
-module load gatk
-module load bcftools
+# module load vcftools
+# module load GIF/datamash
+# module load gatk
+# module load bcftools
 mkdir -p vcffiles idxfiles
 # merge vcf files
 mv *.vcf ./vcffiles

@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 /* import modules */
-include { gatk0_index_help; gatk0_index } from './modules/wrap_bin.nf'
+include { gatk0_index_help; gatk0_index; gatk2_preprocess_help; gatk3_cmdsgen_help; gatk4_filter_help } from './modules/wrap_bin.nf'
 include { fastqc } from './modules/fastqc.nf'
 
 /* define workflow */
@@ -15,6 +15,9 @@ workflow {
   // index genome
   gatk0_index_help()
   channel.fromPath(params.genome) | gatk0_index
+  gatk2_preprocess_help()
+  gatk3_cmdsgen_help()
+  gatk4_filter_help()
 
   // Debug check: make sure files are passed in
   channel.fromPath(params.genome) | view

@@ -11,9 +11,9 @@ if [ $# -ne 3 ] ; then
    echo ""
    exit 0
 fi
-module load picard
-module load bwa
-module load samtools
+# module load picard
+# module load bwa
+# module load samtools
 ulimit -c unlimited
 REF=$1
 R1=$2

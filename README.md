@@ -26,3 +26,23 @@ Only the reads that map to the region of the v5 genome is included, so that this
 There are examples of multiple files belonging to same NAM line as well as single file per NAM line to make sure both conditions works correctly.
 The end VCF file should have exactly 27 individuals (lines) in them.
 
+### Container 
+
+Tools required for the workflow are included in the container
+
+#### To pull the image
+
+```
+singularity pull --name gatk.sif shub://aseetharam/gatk:latest
+```
+
+#### To use the image
+
+```
+singularity exec gatk.sif samtools
+singularity exec gatk.sif bwa
+singularity exec gatk.sif datamash
+singularity exec gatk.sif java -jar $GATKHOME/$GATK
+singularity exec gatk.sif java -jar $PICARDHOME/picard.jar
+```
+

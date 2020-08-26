@@ -31,6 +31,8 @@ process gatk0_index {
 //   label "bedtools2"
 //   label "bioawk"
 
+  label "gatk0_index"
+
   input:
   path genome_fasta
   

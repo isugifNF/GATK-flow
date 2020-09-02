@@ -2,7 +2,7 @@
 # script to prepare fastq files for GATK snp calling
 # Arun Seetharam
 # 5/16/2019
-if [ $# -ne 3 ] ; then
+if [ $# -ne 4 ] ; then
    echo -e "usage: $(basename "$0") <reference> <read-group> <read R1> <read R2>"
    echo ""
    echo -e "\treference:\tindexed reference genome (full path)-short name in indexing script is fine"
@@ -22,8 +22,8 @@ R1=$3
 R2=$4
 # adjust this to suit your input file name
 OUT=$(basename ${R1%%.*}) # stripping fastq.gz from R1 file
-PICARD_HOME=$(dirname $(which picard))
-PICARD_CMD="java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar ${PICARD_HOME}/picard.jar"
+#PICARD_HOME=$(dirname $(which picard))
+#PICARD_CMD="java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar ${PICARD_HOME}/picard.jar"
 
 # platform id from fastq file
 if [ ${R1: -3} == ".gz" ]; then
@@ -43,7 +43,7 @@ RGPL="ILLUMINA"
 # genotype name, this will appear in VCF file header
 RGSM="$RGID"
 # convert fastq to sam and add readgroups
-$PICARD_CMD FastqToSam \
+picard FastqToSam \
    FASTQ=${R1} \
    FASTQ2=${R2} \
    OUTPUT=${OUT}_fastqtosam.bam \
@@ -58,7 +58,7 @@ echo >&2 ERROR: FastqToSam failed for $OUT
 exit 1
 }
 # marking adapters
-$PICARD_CMD MarkIlluminaAdapters \
+picard MarkIlluminaAdapters \
    I=${OUT}_fastqtosam.bam \
    O=${OUT}_markilluminaadapters.bam \
    M=${OUT}_markilluminaadapters_metrics.txt \
@@ -67,7 +67,7 @@ echo >&2 ERROR: MarkIlluminaAdapters failed for $OUT
 exit 1
 }
 # convert bam back to fastq for mapping
-$PICARD_CMD SamToFastq \
+picard SamToFastq \
    I=${OUT}_markilluminaadapters.bam \
    FASTQ=${OUT}_samtofastq_interleaved.fq \
    CLIPPING_ATTRIBUTE=XT \
@@ -87,7 +87,7 @@ echo >&2 ERROR: BWA failed for $OUT
 exit 1
 }
 # merging alignments
-$PICARD_CMD MergeBamAlignment \
+picard MergeBamAlignment \
    R=$REF \
    UNMAPPED_BAM=${OUT}_fastqtosam.bam \
    ALIGNED_BAM=${OUT}_bwa_mem.bam \
@@ -104,18 +104,17 @@ echo >&2 ERROR: MergeBamAlignment failed for $OUT
 exit 1
 }
 # mark duplicates
-$PICARD_CMD MarkDuplicates \
+picard MarkDuplicates \
   INPUT=${OUT}_snippet_mergebamalignment.bam \
   OUTPUT=${OUT}_prefinal.bam \
   METRICS_FILE=${OUT}_mergebamalignment_markduplicates_metrics.txt \
   OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 \
-  CREATE_INDEX=true \
-  TMP_DIR=$TMPDIR || {
+  CREATE_INDEX=true || {
 echo >&2 ERROR: MarkDuplicates failed for $OUT
 exit 1
 }
 # add read groups
-$PICARD_CMD AddOrReplaceReadGroups \
+picard AddOrReplaceReadGroups \
   INPUT=${OUT}_prefinal.bam \
   OUTPUT=${OUT}_final.bam \
   RGID=${RGID} \

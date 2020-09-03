@@ -49,7 +49,22 @@ module load picard
 module load bwa
 module load samtools
 bash bin/gatk1_preprocess.sh ahalleri.fasta BioSample01 test-data/fastq/BioSample01_R1.fastq.gz test-data/fastq/BioSample01_R2.fastq.gz
+```
 
+<details><summary>See list of generated files</summary>
+ 
+```
+-rw-r--r--. 1 jenchang its-hpc-condo-severin      946 Sep  3 11:29 BioSample01_R1_markilluminaadapters_metrics.txt
+-rw-r--r--. 1 jenchang its-hpc-condo-severin 92652492 Sep  3 11:30 BioSample01_R1_prefinal.bam
+-rw-r--r--. 1 jenchang its-hpc-condo-severin     3304 Sep  3 11:30 BioSample01_R1_prefinal.bai
+-rw-r--r--. 1 jenchang its-hpc-condo-severin     2959 Sep  3 11:30 BioSample01_R1_mergebamalignment_markduplicates_metrics.txt
+-rw-r--r--. 1 jenchang its-hpc-condo-severin 92576481 Sep  3 11:30 BioSample01_R1_final.bam
+-rw-r--r--. 1 jenchang its-hpc-condo-severin     3352 Sep  3 11:30 BioSample01_R1_final.bai
+```
+
+</details>
+
+```
 bash bin/gatk2b_cmdsgen.sh ahalleri_coords.bed ahalleri.fasta *.bam > gatk3_script.sh
 
 module load gatk

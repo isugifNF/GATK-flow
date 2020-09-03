@@ -83,8 +83,16 @@ gatk --java-options "-Xmx80g -XX:+UseParallelGC" HaplotypeCaller -R ahalleri.fas
 ```
 module load gatk
 bash gatk3_script.sh
-# Similar to: gatk --java-options "-Xmx80g -XX:+UseParallelGC" HaplotypeCaller -R ahalleri.fasta -I BioSample01_R1_final.bam  -L chr1:1-999999 --output chr1_1-999999.vcf
 ```
+
+<details><summary>See list of generated files</summary>
+ 
+```
+-rw-r--r--. 1 jenchang its-hpc-condo-severin     4311 Sep  3 12:04 chr1_1-999999.vcf.idx
+-rw-r--r--. 1 jenchang its-hpc-condo-severin  6073681 Sep  3 12:04 chr1_1-999999.vcf
+```
+ 
+ </details>
 
 The last filter step relies on datamash, which can be downloaded and installed locally ([link to GNU datamash download instructions](https://www.gnu.org/software/datamash/download/)). 
 

@@ -25,7 +25,26 @@ module load bwa
 module load bedtools2
 module load bioawk
 bash bin/gatk0_index.sh test-data/ref/b73_chr1_150000001-151000000.fasta ahalleri
+```
 
+<details><summary>See list of generated files</summary>
+
+```
+-rw-r--r--. 1 jenchang its-hpc-condo-severin 1012505 Sep  3 11:23 ahalleri.fasta
+-rw-r--r--. 1 jenchang its-hpc-condo-severin      12 Sep  3 11:23 ahalleri.length
+-rw-r--r--. 1 jenchang its-hpc-condo-severin  500048 Sep  3 11:23 ahalleri.fasta.sa
+-rw-r--r--. 1 jenchang its-hpc-condo-severin  250001 Sep  3 11:23 ahalleri.fasta.pac
+-rw-r--r--. 1 jenchang its-hpc-condo-severin      20 Sep  3 11:23 ahalleri.fasta.fai
+-rw-r--r--. 1 jenchang its-hpc-condo-severin 1000072 Sep  3 11:23 ahalleri.fasta.bwt
+-rw-r--r--. 1 jenchang its-hpc-condo-severin      37 Sep  3 11:23 ahalleri.fasta.ann
+-rw-r--r--. 1 jenchang its-hpc-condo-severin      11 Sep  3 11:23 ahalleri.fasta.amb
+-rw-r--r--. 1 jenchang its-hpc-condo-severin     146 Sep  3 11:23 ahalleri.dict
+-rw-r--r--. 1 jenchang its-hpc-condo-severin      14 Sep  3 11:23 ahalleri_coords.list
+```
+ 
+</details>
+
+```
 module load picard
 module load bwa
 module load samtools

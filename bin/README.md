@@ -65,8 +65,22 @@ bash bin/gatk1_preprocess.sh ahalleri.fasta BioSample01 test-data/fastq/BioSampl
 </details>
 
 ```
-bash bin/gatk2b_cmdsgen.sh ahalleri_coords.bed ahalleri.fasta *.bam > gatk3_script.sh
+bash bin/gatk2b_cmdsgen.sh ahalleri_coords.list ahalleri.fasta *_final.bam > gatk3_script.sh
+```
 
+Which generates gatk commands and puts them in a `gatk3_script.sh` script.
+
+<details><summary>See example gatk3_script.sh</summary>
+ 
+**gatk3_script.sh**
+
+```
+gatk --java-options "-Xmx80g -XX:+UseParallelGC" HaplotypeCaller -R ahalleri.fasta -I BioSample01_R1_final.bam  -L chr1:1-999999 --output chr1_1-999999.vcf;
+```
+ 
+</details>
+
+```
 module load gatk
 bash gatk3_script.sh
 # Similar to: gatk --java-options "-Xmx80g -XX:+UseParallelGC" HaplotypeCaller -R ahalleri.fasta -I BioSample01_R1_final.bam  -L chr1:1-999999 --output chr1_1-999999.vcf

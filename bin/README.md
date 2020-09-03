@@ -102,5 +102,21 @@ module load gatk
 module load bcftools
 module load paralleli
 bash bin/gatk4_filter_mod.sh ahalleri.fasta
-
 ```
+
+<details><summary>See list of generated files</summary>
+ 
+```
+drwxr-sr-x. 2 jenchang its-hpc-condo-severin        1 Sep  3 12:08 vcffiles
+drwxr-sr-x. 2 jenchang its-hpc-condo-severin        1 Sep  3 12:08 idxfiles
+drwxr-sr-x. 2 jenchang its-hpc-condo-severin        1 Sep  3 12:08 plots
+-rw-r--r--. 1 jenchang its-hpc-condo-severin  6066396 Sep  3 12:08 merged.vcf
+-rw-r--r--. 1 jenchang its-hpc-condo-severin        0 Sep  3 12:08 merged_sorted.vchk
+-rw-r--r--. 1 jenchang its-hpc-condo-severin  6066396 Sep  3 12:08 merged_sorted.vcf
+-rw-r--r--. 1 jenchang its-hpc-condo-severin   359229 Sep  3 12:08 merged_sorted-indels.vcf.recode.vcf
+-rw-r--r--. 1 jenchang its-hpc-condo-severin        0 Sep  3 12:08 merged.head
+-rw-r--r--. 1 jenchang its-hpc-condo-severin  6066396 Sep  3 12:08 merged.body
+-rw-r--r--. 1 jenchang its-hpc-condo-severin  5048612 Sep  3 12:08 merged_sorted-snps.vcf.recode.vcf
+```
+
+</details>

@@ -1,0 +1,66 @@
+PROCESSES:
+
+SamToFastq_help
+# SamToFastq_run
+bwa-mem_help
+# bwa-mem_run
+bwa_help
+bwa_index
+createSeqDict_help
+# createSeqDict_run
+faidx_help
+faidx_run
+fastqToSAM_help
+# fastqToSAM_run
+fastqc_help
+fastqc
+bedtools_help
+bedtools_coords
+markAdapters_help
+# markAdapters_run
+seqLength_help
+# seqLength_run
+sortSeq_help
+# sortSeq_run
+gatk0_index_help
+gatk0_index
+gatk2_preprocess_help
+gatk3_cmdsgen_help
+gatk4_filter_help
+
+
+INPUT:
+
+reference.fasta
+*fastq.gz
+readgroup.txt
+
+
+OUTLINE OF CONNECTING PROCESSES:
+
+# Preparing Reference
+reference.fasta | sortSeq_run |_ createSeqDict_run | 
+                              |_ bwa_index 
+                              |_ seqLength_run | bedtools_coords -> gawk process
+                              |_ faidx_run
+# prepping fastq.gz ---> *.bam
+*fastq.gz | get_READGroup | fastqToSAM_run* | markAdapters_run | SamToFastq_run (all reads) | *bwa-mem_run (only mapped reads) | * merge_alignment (merge mapped & unmapped reads) | mark duplicates | replace_read_groups --> bam files --> Gatk process
+
+Gatk process
+(bedtools_coords, bam) -> | number_of_vcf_files | combine_vcf_files |sort_vcf_files | split_indels_SNPs | datamash (SNP, SD, mean deviation) 
+                                                                                         |_________________|____> filter SNP file -> plots (freebayees), vcf R package vcftools stacks function
+
+PLOTTING:
+
+# Generate the stats
+bcftools stats -s - > file.vchk
+
+# Plot the stats
+plot-vcfstats -p outdir file.vchk
+
+# The final looks can be customized by editing the generated
+# 'outdir/plot.py' script and re-running manually
+cd outdir && python plot.py && pdflatex summary.tex
+
+```# Generate the statsbcftools stats -s - > file.vchk# Plot the statsplot-vcfstats -p outdir file.vchk# The final looks can be customized by editing the generated# 'outdir/plot.py' script and re-running manuallycd outdir && python plot.py && pdflatex summary.tex```
+

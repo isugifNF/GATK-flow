@@ -78,6 +78,8 @@ Only the reads that map to the region of the v5 genome is included, so that this
 There are examples of multiple files belonging to same NAM line as well as single file per NAM line to make sure both conditions works correctly.
 The end VCF file should have exactly 27 individuals (lines) in them.
 
+* Test DataSet is on ISU Box -- [https://iastate.app.box.com/v/gatk-test-data](https://iastate.app.box.com/v/gatk-test-data)
+
 ### Container 
 
 Tools required for the workflow are included in the container

@@ -3,7 +3,9 @@ Code and Data to include in WGS Build
 
 Start with the workflow documented on [Bioinformatic Workbook GATK DNAseq Best Practices](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0)
 
-> ### Running the pipeline
+### Running the pipeline
+
+<!--
 >
 > If on a local laptop with nextflow installed:
 > 
@@ -17,20 +19,55 @@ Start with the workflow documented on [Bioinformatic Workbook GATK DNAseq Best P
 > module load gcc/7.3.0-xegsmw4 nextflow
 > nextflow run HuffordLab/Maize_WGS_Build -profile condo
 > ```
+-->
 
-### Edit: LFS test data
-
-Because test data requires `git lfs`, the above commands will not pull the `test-data`. Therefore first `git lfs clone` the large data files and then run the main nextflow script (`main.nf`).
-
-For running on HPCC Condo:
+On HPCC Condo:
 
 ```
-git lfs clone https://github.com/HuffordLab/Maize_WGS_Build.git
+git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd Maize_WGS_Build
+# Fetch dataset from ISU box here and place in `test-data` folder
 
 module load gcc/7.3.0-xegsmw4 nextflow
 nextflow run main.nf -profile condo
 ```
+
+On MacOS laptop where dependencies are locally installed:
+
+```
+nextflow run main.nf 
+#> N E X T F L O W  ~  version 20.07.1
+#> Launching `main.nf` [magical_euler] - revision: 52b8828174
+#> [83/ebe161] process > sortSeq_run (b73_chr1_150000001-151000000.fasta)              [100%] 1 of 1 ✔
+#> [57/9cc2d8] process > createSeqDict_run (b73_chr1_150000001-151000000_sorted.fasta) [100%] 1 of 1 ✔
+#> [bd/b3d232] process > bwa_index (b73_chr1_150000001-151000000_sorted.fasta)         [100%] 1 of 1 ✔
+#> [bf/e71aeb] process > seqLength_run (b73_chr1_150000001-151000000_sorted.fasta)     [100%] 1 of 1 ✔
+#> [3d/74a9a6] process > faidx_run (b73_chr1_150000001-151000000_sorted.fasta)         [100%] 1 of 1 ✔
+#> [62/73b5fc] process > bedtools_coords (b73_chr1_150000001-151000000_sorted)         [100%] 1 of 1 ✔
+#> [BioSample18, [/Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample18_R1.fastq.gz, /Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample18_R2.fastq.gz]]
+#> [BioSample05, [/Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample05_R1.fastq.gz, /Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample05_R2.fastq.gz]]
+#> [BioSample19, [/Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample19_R1.fastq.gz, /Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample19_R2.fastq.gz]]
+#> WARN: Task runtime metrics are not reported when using macOS without a container engine
+```
+
+<details><summary>See generated <b>results</b> folder</summary>
+
+```
+ls -l results/
+#> total 5736
+#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 bedtools
+#> drwxr-xr-x  8 jenchang  staff   256B Sep 10 18:36 bwa
+#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 createSeqDict
+#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 faidx
+#> -rw-r--r--  1 jenchang  staff   2.8M Sep 10 18:36 report.html
+#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 seqLength
+#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 sortSeq
+#> -rw-r--r--  1 jenchang  staff   6.4K Sep 10 18:36 timeline.html
+```
+
+</details>
+
+<!--
 
 <details><summary>See example HPCC Condo running output </summary>
 
@@ -54,6 +91,7 @@ nextflow run main.nf -profile condo
 ```
 </details>
 
+
 All output is in a `results` folder.
 
 <details><summary>See explaination of <b>results</b> folder</summary>
@@ -69,6 +107,8 @@ All output is in a `results` folder.
   ```
   
 </details>
+
+-->
 
 
 ### Test dataset

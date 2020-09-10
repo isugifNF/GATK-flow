@@ -6,7 +6,7 @@ process bedtools_help {
   label 'bedtools'
 
   container = "$bedtools_container"
-  
+
   output: path 'bedtools_out.txt'
 
   """
@@ -15,22 +15,22 @@ process bedtools_help {
 }
 
 process bedtools_coords {
-    tag "$name"
+    tag "${genome_length.baseName}"
     label 'bedtools'
     publishDir "${params.outdir}/bedtools", mode: 'copy'
 
     input:
-    val window=1000000
     val genome_length
-    
+
     output:
-    path "*_coords.bed"
+    path "${genome_length.baseName}_coords.bed"
 
     script:
     """
-    bedtools makewindow -w $window -g $genome_length |\
+    window=100000
+    bedtools makewindows -w \$window -g $genome_length |\
       awk '{print \$1"\t"\$2+1"\t"\$3}' |\
       sed 's/\t/:/1' |\
-      sed 's/\t/-/1' > name_coords.bed
+      sed 's/\t/-/1' > ${genome_length.baseName}_coords.bed
     """
 }

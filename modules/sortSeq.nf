@@ -6,7 +6,7 @@ process sortSeq_help {
   label 'bioawk'
 
   container = "$bioawk_container"
-  
+
   output: path 'sortSeq_out.txt'
 
   """
@@ -15,19 +15,21 @@ process sortSeq_help {
 }
 
 process sortSeq_run {
-    tag "$name"
+    tag "${genome.fileName}"
     label 'bioawk'
     publishDir "${params.outdir}/sortSeq", mode: 'copy'
 
     input:
     val genome
-    val shortname
-    
+//    val shortname
+
     output:
-    path "shortname.fasta"
+    path "${genome.baseName}_sorted.fasta"
 
     script:
     """
-    bioawk -c fastx '{print}' $genome | sort -k1,1V | awk '{print ">"\$1;print \$2}' | fold > ${shortname}.fasta 
+    bioawk -c fastx '{print}' $genome |\
+     sort -k1,1V | awk '{print ">"\$1;print \$2}' |\
+     fold > ${genome.baseName}_sorted.fasta
     """
 }

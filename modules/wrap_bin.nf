@@ -7,13 +7,15 @@
 /*
  * gatk0_index.sh help statement
  */
- 
+
 process gatk0_index_help {
+  publishDir "$params.outdir/wrap_bin"
 
   output: path 'gatk0_index_help.txt'
 
   script:
   """
+  #! /usr/bin/env bash
   bash gatk0_index.sh > gatk0_index_help.txt
   """
 }
@@ -21,50 +23,60 @@ process gatk0_index_help {
 /*
  * bash gatk0_index.sh <genome.fasta> <name_str>
  */
- 
+
 process gatk0_index {
-// Note: labels will link to configs for loading modules, containers, other run time info
-// this is a placeholder
-//   label "samtools"
-//   label "picard"
-//   label "bwa"
-//   label "bedtools2"
-//   label "bioawk"
+  tag "$genome_fasta"
+
+//  label 'samtools'
+//  label 'picard'
+//  label 'bwa'
+//  label 'bedtools2'
+//  label 'bioawk'
 
   label "gatk0_index"
-  publishDir "${params.outdir}/0_index"
-  
+  publishDir "${params.outdir}/gatk0_index", mode: 'copy'
+
   input:
   path genome_fasta
-  
+
   output:
-  path "$genome_fasta"
+  path "$genome_fasta", emit: indexed_genome
   path 'gatk0_index.out'
-  path "indexed_genome*"
+  path "${genome_fasta.baseName}*"
 
 
   script:
   """
   echo "I can see $genome_fasta" > gatk0_index.out
-  bash gatk0_index.sh "$genome_fasta" "indexed_genome"
+  bash gatk0_index.sh "$genome_fasta" "${genome_fasta.baseName}"
+  """
+}
+
+process gatk1_preprocess {
+  tag "$genome_fasta, $name, $reads"
+
+//  label 'samtools'
+//  label 'picard'
+//  label 'bwa'
+
+  label "gatk1_index"
+
+  publishDir "${params.outdir}/gatk1_preprocess", mode: 'copy'
+
+  input:
+  path genome_fasta
+  tuple val(name), path(reads)
+
+  output:
+  path "$name*"
+
+  script:
+  """
+  bash gatk1_preprocess.sh $genome_fasta $name $reads
   """
 }
 
 /*
- * gatk2_preprocess.sh help statement
- */
- 
-process gatk2_preprocess_help {
-
-  output: path 'gatk2_preprocess_help.txt'
-
-  script:
-  """
-  bash gatk2_preprocess.sh > gatk2_preprocess_help.txt
-  """
-}
-
-/* 
  * gatk3_cmdsgen.sh
  */
 
@@ -77,8 +89,8 @@ process gatk3_cmdsgen_help {
   """
 }
 
-/* 
- * gatk4_filter.sh 
+/*
+ * gatk4_filter.sh
  */
 
 process gatk4_filter_help {

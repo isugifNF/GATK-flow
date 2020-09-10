@@ -6,7 +6,7 @@ process seqLength_help {
   label 'bioawk'
 
   container = "$bioawk_container"
-  
+
   output: path 'seqLength_out.txt'
 
   """
@@ -15,18 +15,19 @@ process seqLength_help {
 }
 
 process seqLength_run {
-    tag "$name"
+    tag "$sorted_ref"
     label 'bioawk'
     publishDir "${params.outdir}/seqLength", mode: 'copy'
 
     input:
-    val shortname
-    
+    path sorted_ref
+
     output:
-    path "shortname.length"
+    path "${sorted_ref.baseName}.length"
 
     script:
     """
-    bioawk -c fastx '{print \$name"\t"length(\$seq)}' $genome > ${shortname}.length
+    bioawk -c fastx '{print \$name"\t"length(\$seq)}' $sorted_ref >\
+     ${sorted_ref.baseName}.length
     """
 }

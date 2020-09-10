@@ -6,7 +6,7 @@ process createSeqDict_help {
   label 'picard'
 
   container = "$picard_container"
-  
+
   output: path 'picard-seqCreateDict.txt'
 
   """
@@ -15,18 +15,20 @@ process createSeqDict_help {
 }
 
 process createSeqDict_run {
-    tag "$name"
+    tag "$sorted_ref"
     label 'picard'
     publishDir "${params.outdir}/createSeqDict", mode: 'copy'
 
     input:
-    val shortname
-    
+    path sorted_ref
+
     output:
-    path "shortname.dict"
+    path "${sorted_ref.baseName}.dict"
 
     script:
     """
-    picard CreateSequenceDictionary REFERENCE=${shortname}.fasta OUTPUT=${shortname}.dict
+    picard CreateSequenceDictionary \
+      REFERENCE=${sorted_ref} \
+      OUTPUT=${sorted_ref.baseName}.dict
     """
 }

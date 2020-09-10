@@ -6,7 +6,7 @@ process faidx_help {
   label 'samtools'
 
   container = "$samtools_container"
-  
+
   output: path 'samtools-faidx.txt'
 
   """
@@ -15,18 +15,18 @@ process faidx_help {
 }
 
 process faidx_run {
-    tag "$name"
+    tag "$sorted_ref"
     label 'samtools'
     publishDir "${params.outdir}/faidx", mode: 'copy'
 
     input:
-    val shortname
-    
+    path sorted_ref
+
     output:
-    path "shortname.fasta.fai"
+    path "${sorted_ref.baseName}.fasta.fai"
 
     script:
     """
-    samtools faidx ${shortname}.fasta
+    samtools faidx ${sorted_ref.baseName}.fasta
     """
 }

@@ -6,7 +6,7 @@ process bwa_help {
   label 'bwa'
 
   container = "$bwa_container"
-  
+
   output: path 'bwa_out.txt'
 
   """
@@ -16,7 +16,7 @@ process bwa_help {
 }
 
 process bwa_index {
-    tag "$name"
+    tag "$sorted_ref"
 //    label 'process_medium'
     label 'bwa'
     publishDir "${params.outdir}/bwa", mode: 'copy'
@@ -26,14 +26,14 @@ process bwa_index {
 
     input:
 //    tuple val(name), file(reads) //from raw_reads_fastqc
-    path(genome_fasta)
+    path(sorted_ref)
 
     output:
-    path "$genome_fasta"
-    path "$genome_fasta*"
+    path "$sorted_ref"
+    path "$sorted_ref*"
 
     script:
     """
-    bwa index $genome_fasta
+    bwa index $sorted_ref
     """
 }

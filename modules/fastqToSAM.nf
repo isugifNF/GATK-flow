@@ -6,7 +6,7 @@ process fastqToSAM_help {
   label 'picard'
 
   container = "$picard_container"
-  
+
   output: path 'picard-fastqToSAM.txt'
 
   """
@@ -15,18 +15,20 @@ process fastqToSAM_help {
 }
 
 process fastqToSAM_run {
-    tag "$name"
+    tag "$readgroup"
     label 'picard'
     publishDir "${params.outdir}/fastqToSAM", mode: 'copy'
 
     input:
+    tuple val(readgroup), path(readpairs)
+
     val read1
     val read2
     val readgroup
     val readname
     val platform
     val rundate
-    var center 
+    var center
 
     output:
     path "readname_fastqtosam.bam"

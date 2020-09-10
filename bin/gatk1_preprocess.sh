@@ -12,10 +12,10 @@ if [ $# -ne 4 ] ; then
    echo ""
    exit 0
 fi
-module load picard
-module load bwa
-module load samtools
-ulimit -c unlimited
+# module load picard
+# module load bwa
+# module load samtools
+#ulimit -c unlimited
 REF=$1
 RGID=$2
 R1=$3
@@ -27,8 +27,10 @@ OUT=$(basename ${R1%%.*}) # stripping fastq.gz from R1 file
 
 # platform id from fastq file
 if [ ${R1: -3} == ".gz" ]; then
-   PLT=$(zcat $R1 |head -n 1 |cut -f 3 -d ":")
-   RGPU=$(zcat $R1 |head -n 1 |cut -f 3-5 -d ":")
+   #PLT=$(zcat $R1 |head -n 1 |cut -f 3 -d ":")
+   #RGPU=$(zcat $R1 |head -n 1 |cut -f 3-5 -d ":")
+   PLT=$(gunzip -c $R1 |head -n 1 |cut -f 3 -d ":")
+   RGPU=$(gunzip -c $R1 |head -n 1 |cut -f 3-5 -d ":")
 else
    PLT=$(cat $R1 |head -n 1 |cut -f 3 -d ":")
    RGPU=$(cat $R1 |head -n 1 |cut -f 3-5 -d ":")

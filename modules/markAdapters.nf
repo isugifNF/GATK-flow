@@ -25,7 +25,7 @@ process markAdapters_run {
 
     output:
     path "${read_bam.baseName}*.bam", emit: read_marked
-    path "${read_bam.baseName}*.bam"
+    path "${read_bam.baseName}*.txt"
 //    path "readname_markilluminaadapters_metrics.txt"
 
     script:

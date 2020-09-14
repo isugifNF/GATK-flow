@@ -2,11 +2,11 @@
 
 bwa_container = 'kathrinklee/bwa'
 
-process bwa-mem_help {
+process bwa_mem_help {
   label 'bwa'
 
   container = "$bwa_container"
-  
+
   output: path 'bwa-mem_out.txt'
 
   """
@@ -15,18 +15,19 @@ process bwa-mem_help {
   """
 }
 
-process bwa-mem_run {
-    tag "$name"
+process bwa_mem_run {
+    tag "$genome_fasta, $readname"
     label 'bwa'
     publishDir "${params.outdir}/bwa-mem", mode: 'copy'
 
     input:
-    path(genome_fasta)
-    val readname
+    path genome_fasta
+    path genome_index
+    each readname_fq
 
     output:
     path "$genome_fasta"
-    path "*.bam"
+    path "${readname_fq.baseName}*.bam"
 
     script:
     """
@@ -34,7 +35,7 @@ process bwa-mem_run {
       -M \
       -t 15 \
       -p $genome_fasta \
-    ${readname}_samtofastq_interleaved.fq |\
-   samtools view -buS - > ${readname}_bwa_mem.bam 
+    ${readname_fq} |\
+   samtools view -buS - > ${readname_fq.baseName}_bwa_mem.bam
     """
 }

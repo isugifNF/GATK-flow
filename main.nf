@@ -28,8 +28,7 @@ workflow {
   seqLength_run.out | bedtools_coords
 
   //==== (Step gatk1) prepare
-  channel.fromFilePairs(params.reads, checkIfExists:true).take(3) |view
-  //| fastqToSAM_run
+  channel.fromFilePairs(params.reads, checkIfExists:true) | fastqToSAM_run
 
 //channel.fromFilePairs(params.reads, checkIfExists:true) |
 //    flatten | buffer(size:2, skip:1) |

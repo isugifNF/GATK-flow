@@ -15,36 +15,42 @@ process fastqToSAM_help {
 }
 
 process fastqToSAM_run {
-    tag "$readgroup"
+    tag "$readname"
     label 'picard'
     publishDir "${params.outdir}/fastqToSAM", mode: 'copy'
 
     input:
-    tuple val(readgroup), path(readpairs)
-
-    val read1
-    val read2
-    val readgroup
-    val readname
-    val platform
-    val rundate
-    var center
+    tuple val(readname), path(readpairs)
+//    val read1
+//    val read2
+//    val readgroup
+//    val readname
+//    val platform
+//    val rundate
+//    var center
 
     output:
-    path "readname_fastqtosam.bam"
+    path "${readname}_fastqtosam.bam"
 
     script:
     """
+    #! /usr/bin/env bash
     picard FastqToSam \
-      FASTQ=${read1} \
-      FASTQ2=${read2} \
+      FASTQ=${readpairs.get(0)} \
+      FASTQ2=${readpairs.get(1)} \
       OUTPUT=${readname}_fastqtosam.bam \
-      READ_GROUP_NAME=${readgroup} \
-      SAMPLE_NAME=${readname} \
-      LIBRARY_NAME=${readname}_lib \
-      PLATFORM_UNIT=${platform} \
-      PLATFORM=illumina \
-      SEQUENCING_CENTER=${center} \
-      RUN_DATE=${rundate}
+      SAMPLE_NAME=${readname}
     """
 }
+
+/* Scrap here
+#platform_unit=`gunzip -c \$read1 | head -n 1 | cut -f 3 -d ":"`
+#center="ISU"
+#rundate=\$(date '+%Y-%m-%d %H:%M:%S' |sed 's/ /T/g')
+  #    READ_GROUP_NAME={readname} \
+  #    LIBRARY_NAME={readname}_lib \
+  #   PLATFORM_UNIT={platform_unit} \
+  #    PLATFORM=ILLUMINA \
+  #    SEQUENCING_CENTER={center} \
+  #    RUN_DATE={rundate}
+*/

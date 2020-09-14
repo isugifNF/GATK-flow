@@ -4,6 +4,23 @@
  * Eventually the scripts will be split into smaller processes for parallization
  *************************************************/
 
+/* Fetches test-data folder, really this is a note to myself"
+// process get_test_data {
+//   publishDir "$params.outdir/test-data", mode:'copy'
+// 
+//   output:
+//   path "test-data"
+//   path "test-data/*"
+//   
+//   script:
+//   """
+//   # /usr/bin/env bash
+//   wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+//   tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+//   """
+// }
+
+
 /*
  * gatk0_index.sh help statement
  */

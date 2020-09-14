@@ -6,7 +6,7 @@ process SamToFastq_help {
   label 'picard'
 
   container = "$picard_container"
-  
+
   output: path 'picard-SamToFastq.txt'
 
   """
@@ -15,21 +15,21 @@ process SamToFastq_help {
 }
 
 process SamToFastq_run {
-    tag "$name"
+    tag "$read_marked"
     label 'picard'
     publishDir "${params.outdir}/SamToFastq", mode: 'copy'
 
     input:
-    val readname
+    path read_marked
 
     output:
-    path "readname_samtofastq_interleaved.fq"
+    path "${read_marked.baseName}_samtofastq_interleaved.fq"
 
     script:
     """
     picard SamToFastq \
-      I=${readname}_markilluminaadapters.bam \
-      FASTQ=${readname}_samtofastq_interleaved.fq \
+      I=${read_marked} \
+      FASTQ=${read_marked.baseName}_samtofastq_interleaved.fq \
       CLIPPING_ATTRIBUTE=XT \
       CLIPPING_ACTION=2 \
       INTERLEAVE=true \

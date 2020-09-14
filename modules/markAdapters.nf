@@ -6,7 +6,7 @@ process markAdapters_help {
   label 'picard'
 
   container = "$picard_container"
-  
+
   output: path 'picard-markAdapters.txt'
 
   """
@@ -15,25 +15,28 @@ process markAdapters_help {
 }
 
 process markAdapters_run {
-    tag "$name"
+    tag "$read_bam"
     label 'picard'
     publishDir "${params.outdir}/markAdapters", mode: 'copy'
 
     input:
-    val readname
-    val TMPDIR
-    
+    path read_bam
+    //val TMPDIR
+
     output:
-    path "readname_markilluminaadapters.bam"
-    path "readname_markilluminaadapters_metrics.txt"
+    path "${read_bam.baseName}*.bam", emit: read_marked
+    path "${read_bam.baseName}*.bam"
+//    path "readname_markilluminaadapters_metrics.txt"
 
     script:
     """
     picard MarkIlluminaAdapters \
-      I=${readname}_fastqtosam.bam \
-      O=${readname}_markilluminaadapters.bam \
-      M=${readname}_markilluminaadapters_metrics.txt \
-      TMP_DIR=${TMPDIR}
+      I=$read_bam \
+      O=${read_bam.baseName}_markilluminaadapters.bam \
+      M=${read_bam.baseName}_markilluminaadapters_metrics.txt
     """
 }
 
+/* Scrap
+TMP_DIR=$TMPDIR
+*/

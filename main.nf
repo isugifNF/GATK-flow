@@ -13,7 +13,8 @@ include { seqLength_run }    from './modules/seqLength.nf'
 include { faidx_run }        from './modules/faidx.nf'
 include { bedtools_coords }  from './modules/makeIntervals.nf'
 include { fastqToSAM_run }   from './modules/fastqToSAM.nf'
-
+include { markAdapters_run }  from './modules/markAdapters.nf'
+include { SamToFastq_run }   from './modules/SAMtoFastq.nf'
 /* define workflow */
 
 workflow {
@@ -28,8 +29,12 @@ workflow {
   seqLength_run.out | bedtools_coords
 
   //==== (Step gatk1) prepare
-  channel.fromFilePairs(params.reads, checkIfExists:true) | fastqToSAM_run
+  channel.fromFilePairs(params.reads, checkIfExists:true) | \
+    fastqToSAM_run | markAdapters_run
 
+  markAdapters_run.out.read_marked | SamToFastq_run
+
+  //markAdapters_run.out.filter(~/.bam$/) |SamToFastq_run
 //channel.fromFilePairs(params.reads, checkIfExists:true) |
 //    flatten | buffer(size:2, skip:1) |
 //    flatten | fastqc

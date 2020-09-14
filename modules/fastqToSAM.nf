@@ -47,10 +47,10 @@ process fastqToSAM_run {
 #platform_unit=`gunzip -c \$read1 | head -n 1 | cut -f 3 -d ":"`
 #center="ISU"
 #rundate=\$(date '+%Y-%m-%d %H:%M:%S' |sed 's/ /T/g')
-  #    READ_GROUP_NAME={readname} \
-  #    LIBRARY_NAME={readname}_lib \
-  #   PLATFORM_UNIT={platform_unit} \
-  #    PLATFORM=ILLUMINA \
-  #    SEQUENCING_CENTER={center} \
-  #    RUN_DATE={rundate}
+#READ_GROUP_NAME={readname} \
+#LIBRARY_NAME={readname}_lib \
+#PLATFORM_UNIT={platform_unit} \
+#PLATFORM=ILLUMINA \
+#SEQUENCING_CENTER={center} \
+#RUN_DATE={rundate}
 */

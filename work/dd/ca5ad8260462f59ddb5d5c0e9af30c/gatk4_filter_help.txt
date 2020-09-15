@@ -1,0 +1,4 @@
+usage: gatk4_filter.sh  <genome fasta file>
+
+	genome.fasta:	FASTA formatted reference genome
+

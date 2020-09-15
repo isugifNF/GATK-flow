@@ -1,0 +1,116 @@
+Sep-01 11:31:53.653 [main] DEBUG nextflow.cli.Launcher - $> nextflow run main.nf
+Sep-01 11:31:54.387 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 20.07.1
+Sep-01 11:31:54.471 [main] INFO  nextflow.cli.CmdRun - Launching `main.nf` [compassionate_venter] - revision: 99983aad6a
+Sep-01 11:31:54.615 [main] DEBUG nextflow.config.ConfigBuilder - Found config local: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/nextflow.config
+Sep-01 11:31:54.626 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/nextflow.config
+Sep-01 11:31:54.810 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `standard`
+Sep-01 11:31:57.363 [main] DEBUG nextflow.Session - Session uuid: 5b7dfa8e-e4cb-46d6-afa9-9d52a90e0e65
+Sep-01 11:31:57.375 [main] DEBUG nextflow.Session - Run name: compassionate_venter
+Sep-01 11:31:57.384 [main] DEBUG nextflow.Session - Executor pool size: 4
+Sep-01 11:31:57.589 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 20.07.1 build 5412
+  Created: 24-07-2020 15:18 UTC (10:18 CDT)
+  System: Linux 4.19.104-microsoft-standard
+  Runtime: Groovy 2.5.11 on OpenJDK 64-Bit Server VM 11.0.8+10-post-Ubuntu-0ubuntu120.04
+  Encoding: UTF-8 (UTF-8)
+  Process: 2482@ARNSTRM [127.0.1.1]
+  CPUs: 4 - Mem: 12.4 GB (11.7 GB) - Swap: 4 GB (4 GB)
+Sep-01 11:31:58.026 [main] DEBUG nextflow.Session - Work-dir: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/work [v9fs]
+Sep-01 11:31:58.537 [main] DEBUG nextflow.Session - Observer factory: TowerFactory
+Sep-01 11:31:58.550 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Sep-01 11:32:01.151 [main] DEBUG nextflow.Session - Session start invoked
+Sep-01 11:32:02.944 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Sep-01 11:32:04.927 [main] DEBUG nextflow.Session - Workflow process names [dsl2]: fastqc, fastqc_help, gatk0_index, gatk0_index_help, gatk4_filter_help, gatk3_cmdsgen_help, gatk2_preprocess_help
+Sep-01 11:32:05.588 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Sep-01 11:32:05.595 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Sep-01 11:32:05.639 [main] DEBUG nextflow.executor.Executor - [warm up] executor > local
+Sep-01 11:32:05.697 [main] DEBUG n.processor.LocalPollingMonitor - Creating local task monitor for executor 'local' > cpus=4; memory=12.4 GB; capacity=4; pollInterval=100ms; dumpInterval=5m
+Sep-01 11:32:06.311 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Sep-01 11:32:06.312 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Sep-01 11:32:06.349 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Sep-01 11:32:06.350 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Sep-01 11:32:06.367 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Sep-01 11:32:06.383 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Sep-01 11:32:06.444 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Sep-01 11:32:06.458 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Sep-01 11:32:06.519 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Sep-01 11:32:06.565 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Sep-01 11:32:06.820 [main] DEBUG nextflow.Session - Ignite dataflow network (10)
+Sep-01 11:32:06.871 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > fastqc
+Sep-01 11:32:06.903 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > gatk0_index_help
+Sep-01 11:32:06.909 [PathVisitor-1] DEBUG nextflow.file.PathVisitor - files for syntax: glob; folder: ./test-data/fastq/; pattern: *.fastq.gz; options: [:]
+Sep-01 11:32:06.923 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > gatk0_index
+Sep-01 11:32:06.971 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > gatk2_preprocess_help
+Sep-01 11:32:06.985 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > gatk3_cmdsgen_help
+Sep-01 11:32:07.012 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > gatk4_filter_help
+Sep-01 11:32:07.037 [main] DEBUG nextflow.script.ScriptRunner - > Await termination 
+Sep-01 11:32:07.040 [main] DEBUG nextflow.Session - Session await
+Sep-01 11:32:07.038 [PathVisitor-3] DEBUG nextflow.file.PathVisitor - files for syntax: glob; folder: ./test-data/fastq/; pattern: *.fastq.gz; options: [:]
+Sep-01 11:32:08.898 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Sep-01 11:32:08.960 [Task submitter] INFO  nextflow.Session - [75/bd6029] Submitted process > gatk3_cmdsgen_help
+Sep-01 11:32:09.240 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Sep-01 11:32:09.254 [Task submitter] INFO  nextflow.Session - [87/c7cab5] Submitted process > fastqc (null)
+Sep-01 11:32:09.519 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Sep-01 11:32:09.528 [Task submitter] INFO  nextflow.Session - [61/bfc6fc] Submitted process > gatk0_index (1)
+Sep-01 11:32:09.694 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Sep-01 11:32:09.702 [Task submitter] INFO  nextflow.Session - [83/bbf4fc] Submitted process > gatk2_preprocess_help
+Sep-01 11:32:13.139 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 6; name: fastqc (null); status: COMPLETED; exit: 1; error: -; workDir: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/work/87/c7cab5d118f991f7ba9a2b0f378b4d]
+Sep-01 11:32:13.495 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Sep-01 11:32:13.496 [Task submitter] INFO  nextflow.Session - [00/962cf0] Submitted process > fastqc (null)
+Sep-01 11:32:13.650 [Task monitor] ERROR nextflow.processor.TaskProcessor - Error executing process > 'fastqc (null)'
+
+Caused by:
+  Process `fastqc (null)` terminated with an error exit status (1)
+
+Command executed:
+
+  fastqc --quiet --threads 1 1487-1_S4_L001_R1_001.fastq.gz
+
+Command exit status:
+  1
+
+Command output:
+  (empty)
+
+Command error:
+  Failed to process 1487-1_S4_L001_R1_001.fastq.gz
+  java.util.zip.ZipException: Not in GZIP format
+  	at java.base/java.util.zip.GZIPInputStream.readHeader(GZIPInputStream.java:166)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:80)
+  	at java.base/java.util.zip.GZIPInputStream.<init>(GZIPInputStream.java:92)
+  	at uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream.<init>(MultiMemberGZIPInputStream.java:37)
+  	at uk.ac.babraham.FastQC.Sequence.FastQFile.<init>(FastQFile.java:80)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:106)
+  	at uk.ac.babraham.FastQC.Sequence.SequenceFactory.getSequenceFile(SequenceFactory.java:62)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.processFile(OfflineRunner.java:159)
+  	at uk.ac.babraham.FastQC.Analysis.OfflineRunner.<init>(OfflineRunner.java:121)
+  	at uk.ac.babraham.FastQC.FastQCApplication.main(FastQCApplication.java:316)
+
+Work dir:
+  /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/work/87/c7cab5d118f991f7ba9a2b0f378b4d
+
+Tip: you can replicate the issue by changing to the process work dir and entering the command `bash .command.run`
+Sep-01 11:32:13.825 [Task monitor] DEBUG nextflow.Session - Session aborted -- Cause: Process `fastqc (null)` terminated with an error exit status (1)
+Sep-01 11:32:13.929 [Task monitor] DEBUG nextflow.Session - The following nodes are still active:
+[process] fastqc
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: reads
+  port 1: (cntrl) -     ; channel: $
+
+Sep-01 11:32:14.191 [main] DEBUG nextflow.Session - Session await > all process finished
+Sep-01 11:32:14.211 [main] DEBUG nextflow.Session - Session await > all barriers passed
+Sep-01 11:32:14.218 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 4; name: gatk2_preprocess_help; status: COMPLETED; exit: 0; error: -; workDir: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/work/83/bbf4fcb978d6b211713039c291abd0]
+Sep-01 11:32:14.384 [main] WARN  n.processor.TaskPollingMonitor - Killing pending tasks (3)
+Sep-01 11:32:14.470 [main] DEBUG nextflow.executor.LocalTaskHandler - Unable to kill gatk3_cmdsgen_help -- command: kill -TERM 2578; exit: 1 
+ bash: line 0: kill: (2578) - No such process
+
+Sep-01 11:32:14.665 [main] DEBUG nextflow.executor.LocalTaskHandler - Unable to kill gatk0_index (1) -- command: kill -TERM 2597; exit: 1 
+ bash: line 0: kill: (2597) - No such process
+
+Sep-01 11:32:14.797 [main] DEBUG nextflow.trace.WorkflowStatsObserver - Workflow completed > WorkflowStats[succeededCount=0; failedCount=1; ignoredCount=0; cachedCount=0; pendingCount=85; submittedCount=1; runningCount=0; retriesCount=0; abortedCount=3; succeedDuration=0ms; failedDuration=3.6s; cachedDuration=0ms;loadCpus=-1; loadMemory=0; peakRunning=4; peakCpus=4; peakMemory=0; ]
+Sep-01 11:32:14.801 [main] DEBUG nextflow.trace.ReportObserver - Flow completing -- rendering html report
+Sep-01 11:32:14.959 [main] DEBUG nextflow.trace.ReportObserver - Execution report summary data:
+  [{"cpuUsage":null,"process":"fastqc","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":{"mean":3610,"min":3610,"q1":3610,"q2":3610,"q3":3610,"max":3610,"minLabel":"fastqc (null)","maxLabel":"fastqc (null)","q1Label":"fastqc (null)","q2Label":"fastqc (null)","q3Label":"fastqc (null)"},"writes":null},{"cpuUsage":null,"process":"gatk3_cmdsgen_help","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":null,"writes":null},{"cpuUsage":null,"process":"gatk0_index","mem":null,"memUsage":null,"timeUsage":null,"vmem":null,"reads":null,"cpu":null,"time":null,"writes":null},{"cpuUsage":{"mean":3.8,"min":3.8,"q1":3.8,"q2":3.8,"q3":3.8,"max":3.8,"minLabel":"gatk2_preprocess_help","maxLabel":"gatk2_preprocess_help","q1Label":"gatk2_preprocess_help","q2Label":"gatk2_preprocess_help","q3Label":"gatk2_preprocess_help"},"process":"gatk2_preprocess_help","mem":{"mean":3330048,"min":3330048,"q1":3330048,"q2":3330048,"q3":3330048,"max":3330048,"minLabel":"gatk2_preprocess_help","maxLabel":"gatk2_preprocess_help","q1Label":"gatk2_preprocess_help","q2Label":"gatk2_preprocess_help","q3Label":"gatk2_preprocess_help"},"memUsage":null,"timeUsage":null,"vmem":{"mean":8826880,"min":8826880,"q1":8826880,"q2":8826880,"q3":8826880,"max":8826880,"minLabel":"gatk2_preprocess_help","maxLabel":"gatk2_preprocess_help","q1Label":"gatk2_preprocess_help","q2Label":"gatk2_preprocess_help","q3Label":"gatk2_preprocess_help"},"reads":{"mean":174534,"min":174534,"q1":174534,"q2":174534,"q3":174534,"max":174534,"minLabel":"gatk2_preprocess_help","maxLabel":"gatk2_preprocess_help","q1Label":"gatk2_preprocess_help","q2Label":"gatk2_preprocess_help","q3Label":"gatk2_preprocess_help"},"cpu":{"mean":3.8,"min":3.8,"q1":3.8,"q2":3.8,"q3":3.8,"max":3.8,"minLabel":"gatk2_preprocess_help","maxLabel":"gatk2_preprocess_help","q1Label":"gatk2_preprocess_help","q2Label":"gatk2_preprocess_help","q3Label":"gatk2_preprocess_help"},"time":{"mean":1167,"min":1167,"q1":1167,"q2":1167,"q3":1167,"max":1167,"minLabel":"gatk2_preprocess_help","maxLabel":"gatk2_preprocess_help","q1Label":"gatk2_preprocess_help","q2Label":"gatk2_preprocess_help","q3Label":"gatk2_preprocess_help"},"writes":{"mean":382,"min":382,"q1":382,"q2":382,"q3":382,"max":382,"minLabel":"gatk2_preprocess_help","maxLabel":"gatk2_preprocess_help","q1Label":"gatk2_preprocess_help","q2Label":"gatk2_preprocess_help","q3Label":"gatk2_preprocess_help"}}]
+Sep-01 11:32:17.057 [main] DEBUG nextflow.trace.TimelineObserver - Flow completing -- rendering html timeline
+Sep-01 11:32:17.237 [main] DEBUG nextflow.CacheDB - Closing CacheDB done
+Sep-01 11:32:17.347 [main] DEBUG nextflow.script.ScriptRunner - > Execution complete -- Goodbye

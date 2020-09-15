@@ -1,0 +1,4 @@
+2020-09-01 11:27:43	19s	boring_gautier	ERR	99983aad6a51349469601390bd65d06c	5d3f4707-0d91-4c99-9a1a-bd8c2156a191	nextflow run main.nf
+2020-09-01 11:29:22	15.5s	hopeful_visvesvaraya	ERR	99983aad6a51349469601390bd65d06c	fb6a2765-83e0-420b-81ac-f9d6e64a1f09	nextflow run main.nf
+2020-09-01 11:31:57	20.3s	compassionate_venter	ERR	99983aad6a51349469601390bd65d06c	5b7dfa8e-e4cb-46d6-afa9-9d52a90e0e65	nextflow run main.nf
+2020-09-01 11:35:01	14s	high_keller	OK	fb254b1e88bd1488a0fcf9c364102a18	1a619494-4537-4347-9c3e-47c67a1ea14f	nextflow run main.nf

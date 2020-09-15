@@ -1,0 +1,4 @@
+/mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/bin/gatk0_index.sh: line 26: picard: command not found
+/mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/bin/gatk0_index.sh: line 27: bwa: command not found
+/mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/bin/gatk0_index.sh: line 28:  2903 Segmentation fault      bioawk -c fastx '{print $name"\t"length($seq)}' ${name}.fasta > ${name}.length
+/mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/bin/gatk0_index.sh: line 29: bedtools: command not found

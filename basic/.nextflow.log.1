@@ -1,0 +1,38 @@
+Sep-01 11:54:21.594 [main] DEBUG nextflow.cli.Launcher - $> nextflow run main.nf
+Sep-01 11:54:22.472 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 20.07.1
+Sep-01 11:54:22.620 [main] INFO  nextflow.cli.CmdRun - Launching `main.nf` [exotic_shirley] - revision: 6c5c7fb6bc
+Sep-01 11:54:23.201 [main] DEBUG nextflow.Session - Session uuid: a74af082-226d-4dfb-af36-95bb52685bfb
+Sep-01 11:54:23.212 [main] DEBUG nextflow.Session - Run name: exotic_shirley
+Sep-01 11:54:23.234 [main] DEBUG nextflow.Session - Executor pool size: 4
+Sep-01 11:54:23.512 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 20.07.1 build 5412
+  Created: 24-07-2020 15:18 UTC (10:18 CDT)
+  System: Linux 4.19.104-microsoft-standard
+  Runtime: Groovy 2.5.11 on OpenJDK 64-Bit Server VM 11.0.8+10-post-Ubuntu-0ubuntu120.04
+  Encoding: UTF-8 (UTF-8)
+  Process: 4583@ARNSTRM [127.0.1.1]
+  CPUs: 4 - Mem: 12.4 GB (11.7 GB) - Swap: 4 GB (4 GB)
+Sep-01 11:54:23.927 [main] DEBUG nextflow.Session - Work-dir: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/basic/work [v9fs]
+Sep-01 11:54:23.954 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/basic/bin
+Sep-01 11:54:24.294 [main] DEBUG nextflow.Session - Observer factory: TowerFactory
+Sep-01 11:54:24.332 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Sep-01 11:54:25.465 [main] DEBUG nextflow.Session - Session start invoked
+Sep-01 11:54:27.369 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Sep-01 11:54:27.570 [main] DEBUG nextflow.Session - Workflow process names [dsl2]: myhi
+Sep-01 11:54:27.939 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Sep-01 11:54:27.940 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Sep-01 11:54:27.955 [main] DEBUG nextflow.executor.Executor - [warm up] executor > local
+Sep-01 11:54:27.973 [main] DEBUG n.processor.LocalPollingMonitor - Creating local task monitor for executor 'local' > cpus=4; memory=12.4 GB; capacity=4; pollInterval=100ms; dumpInterval=5m
+Sep-01 11:54:28.534 [main] DEBUG nextflow.Session - Ignite dataflow network (2)
+Sep-01 11:54:28.554 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > myhi
+Sep-01 11:54:28.556 [main] DEBUG nextflow.script.ScriptRunner - > Await termination 
+Sep-01 11:54:28.560 [main] DEBUG nextflow.Session - Session await
+Sep-01 11:54:28.588 [PathVisitor-1] DEBUG nextflow.file.PathVisitor - files for syntax: glob; folder: ./; pattern: *.nf; options: [:]
+Sep-01 11:54:29.775 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Sep-01 11:54:29.801 [Task submitter] INFO  nextflow.Session - [4c/7948b4] Submitted process > myhi (1)
+Sep-01 11:54:30.057 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 1; name: myhi (1); status: COMPLETED; exit: 0; error: -; workDir: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/basic/work/4c/7948b4ebd16b239de809a260beed92]
+Sep-01 11:54:30.125 [main] DEBUG nextflow.Session - Session await > all process finished
+Sep-01 11:54:30.160 [main] DEBUG nextflow.Session - Session await > all barriers passed
+Sep-01 11:54:30.181 [main] DEBUG nextflow.trace.WorkflowStatsObserver - Workflow completed > WorkflowStats[succeededCount=1; failedCount=0; ignoredCount=0; cachedCount=0; pendingCount=0; submittedCount=0; runningCount=0; retriesCount=0; abortedCount=0; succeedDuration=158ms; failedDuration=0ms; cachedDuration=0ms;loadCpus=0; loadMemory=0; peakRunning=1; peakCpus=1; peakMemory=0; ]
+Sep-01 11:54:30.624 [main] DEBUG nextflow.CacheDB - Closing CacheDB done
+Sep-01 11:54:30.715 [main] DEBUG nextflow.script.ScriptRunner - > Execution complete -- Goodbye

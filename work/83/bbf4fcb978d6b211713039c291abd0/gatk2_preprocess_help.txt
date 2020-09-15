@@ -1,0 +1,6 @@
+usage: gatk2_preprocess.sh <reference> <read R1> <read R2>
+
+	reference:	indexed reference genome (full path)-short name in indexing script is fine
+	R1:	 forward read
+	R2:	 reverse read
+

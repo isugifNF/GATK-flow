@@ -1,0 +1,5 @@
+usage: gatk0_index.sh <genome.fasta> <name>
+
+	genome.fasta:	FASTA formatted reference genome
+	name:	small name for easy reference management, any argument will suffice, must be one word
+

@@ -1,0 +1,37 @@
+Sep-01 11:44:02.033 [main] DEBUG nextflow.cli.Launcher - $> nextflow run main.nf
+Sep-01 11:44:02.985 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 20.07.1
+Sep-01 11:44:03.027 [main] INFO  nextflow.cli.CmdRun - Launching `main.nf` [serene_jang] - revision: d392e54d52
+Sep-01 11:44:03.670 [main] DEBUG nextflow.Session - Session uuid: 4c98126a-1612-42c9-a24f-070e22afe288
+Sep-01 11:44:03.676 [main] DEBUG nextflow.Session - Run name: serene_jang
+Sep-01 11:44:03.685 [main] DEBUG nextflow.Session - Executor pool size: 4
+Sep-01 11:44:03.876 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 20.07.1 build 5412
+  Created: 24-07-2020 15:18 UTC (10:18 CDT)
+  System: Linux 4.19.104-microsoft-standard
+  Runtime: Groovy 2.5.11 on OpenJDK 64-Bit Server VM 11.0.8+10-post-Ubuntu-0ubuntu120.04
+  Encoding: UTF-8 (UTF-8)
+  Process: 4010@ARNSTRM [127.0.1.1]
+  CPUs: 4 - Mem: 12.4 GB (11.7 GB) - Swap: 4 GB (4 GB)
+Sep-01 11:44:04.235 [main] DEBUG nextflow.Session - Work-dir: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/basic/work [v9fs]
+Sep-01 11:44:04.247 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/basic/bin
+Sep-01 11:44:04.555 [main] DEBUG nextflow.Session - Observer factory: TowerFactory
+Sep-01 11:44:04.593 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Sep-01 11:44:06.837 [main] DEBUG nextflow.Session - Session start invoked
+Sep-01 11:44:10.123 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Sep-01 11:44:10.567 [main] DEBUG nextflow.Session - Session aborted -- Cause: No signature of method: Script_ca802c4d.worflow() is applicable for argument types: (Script_ca802c4d$_runScript_closure2) values: [Script_ca802c4d$_runScript_closure2@108a46d6]
+Sep-01 11:44:10.686 [main] ERROR nextflow.cli.Launcher - @unknown
+groovy.lang.MissingMethodException: No signature of method: Script_ca802c4d.worflow() is applicable for argument types: (Script_ca802c4d$_runScript_closure2) values: [Script_ca802c4d$_runScript_closure2@108a46d6]
+	at org.codehaus.groovy.runtime.ScriptBytecodeAdapter.unwrap(ScriptBytecodeAdapter.java:70)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaClassSite.callCurrent(PogoMetaClassSite.java:83)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallCurrent(CallSiteArray.java:51)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:156)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:168)
+	at Script_ca802c4d.runScript(Script_ca802c4d:17)
+	at nextflow.script.BaseScript.runDsl2(BaseScript.groovy:170)
+	at nextflow.script.BaseScript.run(BaseScript.groovy:200)
+	at nextflow.script.ScriptParser.runScript(ScriptParser.groovy:219)
+	at nextflow.script.ScriptRunner.run(ScriptRunner.groovy:219)
+	at nextflow.script.ScriptRunner.execute(ScriptRunner.groovy:127)
+	at nextflow.cli.CmdRun.run(CmdRun.groovy:274)
+	at nextflow.cli.Launcher.run(Launcher.groovy:466)
+	at nextflow.cli.Launcher.main(Launcher.groovy:648)

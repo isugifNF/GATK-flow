@@ -1,0 +1,55 @@
+Sep-01 11:52:58.178 [main] DEBUG nextflow.cli.Launcher - $> nextflow run main.nf --input tom
+Sep-01 11:52:58.823 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 20.07.1
+Sep-01 11:52:58.943 [main] INFO  nextflow.cli.CmdRun - Launching `main.nf` [insane_volta] - revision: e0078b6279
+Sep-01 11:52:59.464 [main] DEBUG nextflow.Session - Session uuid: a93b7d95-326e-4cb5-b087-973690bd24bf
+Sep-01 11:52:59.475 [main] DEBUG nextflow.Session - Run name: insane_volta
+Sep-01 11:52:59.494 [main] DEBUG nextflow.Session - Executor pool size: 4
+Sep-01 11:52:59.643 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 20.07.1 build 5412
+  Created: 24-07-2020 15:18 UTC (10:18 CDT)
+  System: Linux 4.19.104-microsoft-standard
+  Runtime: Groovy 2.5.11 on OpenJDK 64-Bit Server VM 11.0.8+10-post-Ubuntu-0ubuntu120.04
+  Encoding: UTF-8 (UTF-8)
+  Process: 4376@ARNSTRM [127.0.1.1]
+  CPUs: 4 - Mem: 12.4 GB (11.7 GB) - Swap: 4 GB (4 GB)
+Sep-01 11:52:59.987 [main] DEBUG nextflow.Session - Work-dir: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/basic/work [v9fs]
+Sep-01 11:53:00.062 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/basic/bin
+Sep-01 11:53:00.336 [main] DEBUG nextflow.Session - Observer factory: TowerFactory
+Sep-01 11:53:00.343 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Sep-01 11:53:01.113 [main] DEBUG nextflow.Session - Session start invoked
+Sep-01 11:53:03.128 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Sep-01 11:53:03.234 [main] WARN  nextflow.script.ScriptBinding - Access to undefined parameter `call` -- Initialise it to a default value eg. `params.call = some_value`
+Sep-01 11:53:03.255 [main] DEBUG nextflow.Session - Session aborted -- Cause: No signature of method: static nextflow.script.ScriptBinding.call() is applicable for argument types: (Script_f575badf$_runScript_closure1) values: [Script_f575badf$_runScript_closure1@59ed3e6c]
+Possible solutions: wait(), any(), wait(long), tap(groovy.lang.Closure), any(groovy.lang.Closure), each(groovy.lang.Closure)
+Sep-01 11:53:03.370 [main] ERROR nextflow.cli.Launcher - @unknown
+groovy.lang.MissingMethodException: No signature of method: static nextflow.script.ScriptBinding.call() is applicable for argument types: (Script_f575badf$_runScript_closure1) values: [Script_f575badf$_runScript_closure1@59ed3e6c]
+Possible solutions: wait(), any(), wait(long), tap(groovy.lang.Closure), any(groovy.lang.Closure), each(groovy.lang.Closure)
+	at groovy.lang.MetaClassImpl.invokeStaticMissingMethod(MetaClassImpl.java:1525)
+	at groovy.lang.MetaClassImpl.invokeStaticMethod(MetaClassImpl.java:1511)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokeMethod(InvokerHelper.java:985)
+	at org.codehaus.groovy.runtime.ScriptBytecodeAdapter.invokeMethodN(ScriptBytecodeAdapter.java:180)
+	at nextflow.script.ScriptBinding$ParamsMap.methodMissing(ScriptBinding.groovy)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:101)
+	at groovy.lang.MetaClassImpl.invokeMissingMethod(MetaClassImpl.java:958)
+	at groovy.lang.MetaClassImpl.invokePropertyOrMissing(MetaClassImpl.java:1286)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1219)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1041)
+	at groovy.lang.MetaClassImpl.invokePropertyOrMissing(MetaClassImpl.java:1283)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1219)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaClassSite.callCurrent(PogoMetaClassSite.java:64)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallCurrent(CallSiteArray.java:51)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:156)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:168)
+	at Script_f575badf.runScript(Script_f575badf:6)
+	at nextflow.script.BaseScript.runDsl2(BaseScript.groovy:170)
+	at nextflow.script.BaseScript.run(BaseScript.groovy:200)
+	at nextflow.script.ScriptParser.runScript(ScriptParser.groovy:219)
+	at nextflow.script.ScriptRunner.run(ScriptRunner.groovy:219)
+	at nextflow.script.ScriptRunner.execute(ScriptRunner.groovy:127)
+	at nextflow.cli.CmdRun.run(CmdRun.groovy:274)
+	at nextflow.cli.Launcher.run(Launcher.groovy:466)
+	at nextflow.cli.Launcher.main(Launcher.groovy:648)

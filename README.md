@@ -136,7 +136,7 @@ singularity pull --name gatk.sif shub://aseetharam/gatk:latest
 singularity exec gatk.sif samtools
 singularity exec gatk.sif bwa
 singularity exec gatk.sif datamash
-singularity exec gatk.sif java -jar $GATKHOME/$GATK
-singularity exec gatk.sif java -jar $PICARDHOME/picard.jar
+singularity exec gatk.sif gatk
+singularity exec gatk.sif picard
 ```
 

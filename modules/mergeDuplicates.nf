@@ -5,8 +5,6 @@ picard_container = ''
 process MarkDuplicates_help {
   label 'picard'
 
-  container = "$picard_container"
-
   output: path 'picard-MarkDuplicates.txt'
 
   """

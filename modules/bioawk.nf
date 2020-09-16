@@ -21,7 +21,6 @@ process sortSeq_run {
 
     input:
     val genome
-//    val shortname
 
     output:
     path "${genome.baseName}_sorted.fasta"
@@ -31,5 +30,35 @@ process sortSeq_run {
     bioawk -c fastx '{print}' $genome |\
      sort -k1,1V | awk '{print ">"\$1;print \$2}' |\
      fold > ${genome.baseName}_sorted.fasta
+    """
+}
+
+process seqLength_help {
+  label 'bioawk'
+
+  container = "$bioawk_container"
+
+  output: path 'seqLength_out.txt'
+
+  """
+  bioawk --help > seqLength_out.txt
+  """
+}
+
+process seqLength_run {
+    tag "$sorted_ref"
+    label 'bioawk'
+    publishDir "${params.outdir}/seqLength", mode: 'copy'
+
+    input:
+    path sorted_ref
+
+    output:
+    path "${sorted_ref.baseName}.length"
+
+    script:
+    """
+    bioawk -c fastx '{print \$name"\t"length(\$seq)}' $sorted_ref >\
+     ${sorted_ref.baseName}.length
     """
 }

@@ -1,6 +1,0 @@
-usage: gatk3_cmdsgen.sh <windows bed file> <genome fasta file> <regex for bam files>
-
-	windows.bed:	BED formatted reference intervals to call SNPs
-	genome.fasta:	FASTA formatted reference genome
-	final.bam files:	BAM formatted final files from processing step
-

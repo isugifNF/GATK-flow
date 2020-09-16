@@ -1,1 +1,0 @@
-/mnt/c/Users/arunk/Documents/github/Maize_WGS_Build/work/dd/ca5ad8260462f59ddb5d5c0e9af30c/gatk4_filter_help.txt

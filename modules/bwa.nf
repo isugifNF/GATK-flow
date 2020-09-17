@@ -53,10 +53,9 @@ process bwa_mem_help {
 
 process bwa_mem_run {
     tag "$genome_fasta, $readname_fq.simpleName"
+    label 'bwa_mem'
 //    label 'bwa'
  //   label 'samtools'
-
-    module 'bwa;samtools'
     publishDir "${params.outdir}/bwa_mem", mode: 'copy'
 
     input:

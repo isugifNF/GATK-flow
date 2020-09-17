@@ -5,9 +5,9 @@
 #SBATCH --job-name=NextFlow
 #SBATCH --output=R-%x.%J.out
 #SBATCH --error=R-%x.%J.err
-#SBATCH --mail-user=jenchang@iastate.edu
-#SBATCH --mail-type=begin
-#SBATCH --mail-type=end
+# --mail-user=username@email.com
+# --mail-type=begin
+# --mail-type=end
 
 set -e
 set -u

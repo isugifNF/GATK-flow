@@ -35,7 +35,7 @@ workflow {
 
   //==== (Step gatk0) index genome for faster alignment
   // channel.fromPath(params.genome) | gatk0_index
-  channel.fromPath(params.genome, checkIfExists:true).take(3) | sortSeq_run |\
+  channel.fromPath(params.genome, checkIfExists:true) | sortSeq_run |\
      (createSeqDict_run & bwa_index & seqLength_run & faidx_run)
 
   seqLength_run.out | bedtools_coords

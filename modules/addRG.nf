@@ -1,13 +1,10 @@
 #! /usr/bin/env nextflow
 
-picard_container = ''
-
 process AddOrReplaceReadGroups_help {
   label 'picard'
 
-  container = "$picard_container"
-
-  output: path 'picard-AddOrReplaceReadGroups.txt'
+  output:
+  path 'picard-AddOrReplaceReadGroups.txt'
 
   """
   picard AddOrReplaceReadGroups > picard-AddOrReplaceReadGroups.txt

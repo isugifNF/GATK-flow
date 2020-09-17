@@ -23,10 +23,10 @@ process faidx_run {
     path sorted_ref
 
     output:
-    path "${sorted_ref.baseName}.fasta.fai"
+    path "${sorted_ref.simpleName}.fasta.fai"
 
     script:
     """
-    samtools faidx ${sorted_ref.baseName}.fasta
+    samtools faidx ${sorted_ref.simpleName}.fasta
     """
 }

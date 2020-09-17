@@ -52,7 +52,7 @@ process bwa_mem_help {
 }
 
 process bwa_mem_run {
-    tag "$genome_fasta, $readname"
+    tag "$genome_fasta, $genome_index, $readname_fq.simpleName"
     label 'bwa'
     label 'samtools'
     publishDir "${params.outdir}/bwa_mem", mode: 'copy'
@@ -64,7 +64,7 @@ process bwa_mem_run {
 
     output:
     path "$genome_fasta"
-    path "${readname_fq.baseName}*.bam"
+    path "${readname_fq.simpleName}*.bam"
 
     script:
     """
@@ -73,6 +73,6 @@ process bwa_mem_run {
       -t 15 \
       -p $genome_fasta \
     ${readname_fq} |\
-   samtools view -buS - > ${readname_fq.baseName}_bwa_mem.bam
+   samtools view -buS - > ${readname_fq.simpleName}_bwa_mem.bam
     """
 }

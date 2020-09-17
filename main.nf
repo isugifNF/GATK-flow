@@ -3,19 +3,26 @@
 nextflow.enable.dsl=2
 
 /* import modules */
-include { gatk0_index; gatk1_preprocess } from './modules/wrap_bin.nf'
 include { fastqc } from './modules/fastqc.nf'
 
-include { sortSeq_run }      from './modules/sortSeq.nf'
-include { createSeqDict_run} from './modules/createSeqDict.nf'
-include { bwa_index }        from './modules/bwa.nf'
-include { seqLength_run }    from './modules/seqLength.nf'
+include {
+  sortSeq_run
+  seqLength_run
+} from './modules/bioawk.nf'
+
+include {
+  createSeqDict_run
+  fastqToSAM_run
+  markAdapters_run
+  SamToFastq_run
+} from './modules/picard.nf'
+include {
+  bwa_index
+  bwa_mem_run
+} from './modules/bwa.nf'
+
 include { faidx_run }        from './modules/faidx.nf'
 include { bedtools_coords }  from './modules/makeIntervals.nf'
-include { fastqToSAM_run }   from './modules/fastqToSAM.nf'
-include { markAdapters_run } from './modules/markAdapters.nf'
-include { SamToFastq_run }   from './modules/SAMtoFastq.nf'
-include { bwa_mem_run }      from './modules/bwa-mem.nf'
 /* define workflow */
 
 workflow {
@@ -30,7 +37,7 @@ workflow {
   seqLength_run.out | bedtools_coords
 
   //==== (Step gatk1) prepare
-  channel.fromFilePairs(params.reads, checkIfExists:true) | \
+  channel.fromFilePairs(params.reads, checkIfExists:true).take(3) | \
     fastqToSAM_run | markAdapters_run
 
   markAdapters_run.out.read_marked | SamToFastq_run

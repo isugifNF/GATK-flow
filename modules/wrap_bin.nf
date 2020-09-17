@@ -5,20 +5,19 @@
  *************************************************/
 
 /* Fetches test-data folder, really this is a note to myself"
-// process get_test_data {
-//   publishDir "$params.outdir/test-data", mode:'copy'
-// 
-//   output:
-//   path "test-data"
-//   path "test-data/*"
-//   
-//   script:
-//   """
-//   # /usr/bin/env bash
-//   wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-//   tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-//   """
-// }
+process get_test_data {
+  publishDir "test-data", mode:'copy'
+
+  output:
+  path "*"
+
+  script:
+  """
+  # /usr/bin/env bash
+  wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+  tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+  """
+}
 
 
 /*
@@ -59,13 +58,13 @@ process gatk0_index {
   output:
   path "$genome_fasta", emit: indexed_genome
   path 'gatk0_index.out'
-  path "${genome_fasta.baseName}*"
+  path "${genome_fasta.simpleName}*"
 
 
   script:
   """
   echo "I can see $genome_fasta" > gatk0_index.out
-  bash gatk0_index.sh "$genome_fasta" "${genome_fasta.baseName}"
+  bash gatk0_index.sh "$genome_fasta" "${genome_fasta.simpleName}"
   """
 }
 

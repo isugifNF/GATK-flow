@@ -21,13 +21,13 @@ process createSeqDict_run {
     path sorted_ref
 
     output:
-    path "${sorted_ref.baseName}.dict"
+    path "${sorted_ref.simpleName}.dict"
 
     script:
     """
     picard CreateSequenceDictionary \
       REFERENCE=${sorted_ref} \
-      OUTPUT=${sorted_ref.baseName}.dict
+      OUTPUT=${sorted_ref.simpleName}.dict
     """
 }
 
@@ -97,16 +97,16 @@ process markAdapters_run {
     //val TMPDIR
 
     output:
-    path "${read_bam.baseName}*.bam", emit: read_marked
-    path "${read_bam.baseName}*.txt"
+    path "${read_bam.simpleName}*.bam", emit: read_marked
+    path "${read_bam.simpleName}*.txt"
 //    path "readname_markilluminaadapters_metrics.txt"
 
     script:
     """
     picard MarkIlluminaAdapters \
       I=$read_bam \
-      O=${read_bam.baseName}_markilluminaadapters.bam \
-      M=${read_bam.baseName}_markilluminaadapters_metrics.txt
+      O=${read_bam.simpleName}_markilluminaadapters.bam \
+      M=${read_bam.simpleName}_markilluminaadapters_metrics.txt
     """
 }
 
@@ -135,13 +135,13 @@ process SamToFastq_run {
     path read_marked
 
     output:
-    path "${read_marked.baseName}_samtofastq_interleaved.fq"
+    path "${read_marked.simpleName}_samtofastq_interleaved.fq"
 
     script:
     """
     picard SamToFastq \
       I=${read_marked} \
-      FASTQ=${read_marked.baseName}_samtofastq_interleaved.fq \
+      FASTQ=${read_marked.simpleName}_samtofastq_interleaved.fq \
       CLIPPING_ATTRIBUTE=XT \
       CLIPPING_ACTION=2 \
       INTERLEAVE=true \

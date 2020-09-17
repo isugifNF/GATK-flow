@@ -52,9 +52,11 @@ process bwa_mem_help {
 }
 
 process bwa_mem_run {
-    tag "$genome_fasta, $genome_index, $readname_fq.simpleName"
-    label 'bwa'
-    label 'samtools'
+    tag "$genome_fasta, $readname_fq.simpleName"
+//    label 'bwa'
+ //   label 'samtools'
+
+    module 'bwa;samtools'
     publishDir "${params.outdir}/bwa_mem", mode: 'copy'
 
     input:

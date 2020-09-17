@@ -3,6 +3,7 @@
 nextflow.enable.dsl=2
 
 /* import modules */
+// include { get_test_data } from './modules/wrap_bin.nf'
 include { fastqc } from './modules/fastqc.nf'
 
 include {
@@ -26,12 +27,15 @@ include { bedtools_coords }  from './modules/makeIntervals.nf'
 /* define workflow */
 
 workflow {
+  //==== (Run once to fetch test data)
+  //  get_test_data()
+
   //==== (Step gatk-1) quality check reads
   //channel.fromPath(params.reads, checkIfExists:true) | fastqc
 
   //==== (Step gatk0) index genome for faster alignment
   // channel.fromPath(params.genome) | gatk0_index
-  channel.fromPath(params.genome, checkIfExists:true) | sortSeq_run |\
+  channel.fromPath(params.genome, checkIfExists:true).take(3) | sortSeq_run |\
      (createSeqDict_run & bwa_index & seqLength_run & faidx_run)
 
   seqLength_run.out | bedtools_coords

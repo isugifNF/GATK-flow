@@ -4,9 +4,9 @@
  * Eventually the scripts will be split into smaller processes for parallization
  *************************************************/
 
-/* Fetches test-data folder, really this is a note to myself"
+/* Fetches test-data folder, really this is a note to myself*/
 process get_test_data {
-  publishDir "test-data", mode:'copy'
+  publishDir "./", mode:'copy'
 
   output:
   path "*"

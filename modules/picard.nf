@@ -52,7 +52,7 @@ process fastqToSAM_run {
     tuple val(readname), path(readpairs)
 
     output:
-    path "${readname}_fastqtosam.bam"
+    path "${readname}.bam"
 
     script:
     """
@@ -60,7 +60,7 @@ process fastqToSAM_run {
     picard FastqToSam \
       FASTQ=${readpairs.get(0)} \
       FASTQ2=${readpairs.get(1)} \
-      OUTPUT=${readname}_fastqtosam.bam \
+      OUTPUT=${readname}.bam \
       SAMPLE_NAME=${readname}
     """
 }
@@ -94,12 +94,10 @@ process markAdapters_run {
 
     input:
     path read_bam
-    //val TMPDIR
 
     output:
-    path "${read_bam.simpleName}*.bam", emit: read_marked
-    path "${read_bam.simpleName}*.txt"
-//    path "readname_markilluminaadapters_metrics.txt"
+    path "${read_bam.simpleName}_markilluminaadapters.bam", emit: read_marked
+    path "${read_bam.simpleName}_markilluminaadapters_metrics.txt"
 
     script:
     """
@@ -135,13 +133,13 @@ process SamToFastq_run {
     path read_marked
 
     output:
-    path "${read_marked.simpleName}_samtofastq_interleaved.fq"
+    path "${read_marked.simpleName}_interleaved.fq"
 
     script:
     """
     picard SamToFastq \
       I=${read_marked} \
-      FASTQ=${read_marked.simpleName}_samtofastq_interleaved.fq \
+      FASTQ=${read_marked.simpleName}_interleaved.fq \
       CLIPPING_ATTRIBUTE=XT \
       CLIPPING_ACTION=2 \
       INTERLEAVE=true \

@@ -24,7 +24,7 @@ include {
 
 include { faidx_run }        from './modules/faidx.nf'
 include { bedtools_coords }  from './modules/makeIntervals.nf'
-include { MergeBamAlignment_run } from './modules/mergeAlignment.nf'
+include { MergeBamAlignment_run; test_run } from './modules/mergeAlignment.nf'
 
 /* define workflow */
 
@@ -58,27 +58,35 @@ workflow {
     SamToFastq_run.out
   )
 
-  //bwa_index.out.mix().view()
-  //createSeqDict_run.out | view
+  // Single genome channel
+  genome_ch = bwa_index.out
+    .mix()
+    .collate(2,2)
+    .combine(createSeqDict_run.out)
+    .combine(faidx_run.out)
 
-  genome_ch = bwa_index.out.mix().collate(2,2).combine(createSeqDict_run.out)
-
+  // Multiple read channel
   /* This makes sure mapped and unmapped read names match, or it will combine randomly */
-  read_ch1 = fastqToSAM_run.out
-    .flatMap {n -> [n.baseName, n] }
-    .collate(2,2)
 
-  read_ch2 = bwa_mem_run.out
-    .flatMap { n -> [ n.baseName.replaceFirst("_markilluminaadapters_interleaved_bwa_mem", ""), n] }
-    .collate(2,2)
+  read_unmapped = fastqToSAM_run.out
+    .flatMap {
+      // Create a list [BiosampleX_string, unmapped_bam_file]
+      n -> [n.simpleName, n]
+    }
+    .collate(2)
 
-  read_merge_ch3 = read_ch1.join(read_ch2)
+  read_mapped = bwa_mem_run.out
+    .flatMap {
+      // Create a list [BiosampleX_string, mapped_file]
+      n -> [ n.simpleName.replaceFirst("_markilluminaadapters_interleaved_bwa_mem", ""), n]
+    }
+    .collate(2)
 
-  read_merge_ch3.combine(genome_ch) | view
-  /*
-  read_merge_ch3
-    .flatMap{ n -> [n, bwa_index.out.value()]} | view
-    */
+  reads_ch = read_unmapped
+    .join(read_mapped)
+    .combine(genome_ch) | view
+
+  reads_ch.take(1) | MergeBamAlignment_run
 
 /*
   MergeBamAlignment_run (

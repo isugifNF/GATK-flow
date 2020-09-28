@@ -91,12 +91,7 @@ workflow {
   reads_ch | MergeBamAlignment_run 
   MergeBamAlignment_run.out.bam | MarkDuplicates_run
   MarkDuplicates_run.out.bam | AddOrReplaceReadGroups_run
-/*
-  MergeBamAlignment_run (
-    bwa_index.out,
-    createSeqDict_run.out,
-    read_merge_ch3
-  )
-*/
+
+  AddOrReplaceReadGroups_run.out.flatten() | view
 
 }

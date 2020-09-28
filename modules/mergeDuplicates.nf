@@ -13,23 +13,23 @@ process MarkDuplicates_help {
 }
 
 process MarkDuplicates_run {
-    tag "$readname"
+    tag "${merged_bam.fileName}"
     label 'picard'
     publishDir "${params.outdir}/MarkDuplicates", mode: 'copy'
 
     input:
-    tuple val(readname), path(readpairs)
+    path merged_bam
 
     output:
-    path "${readname}_MarkDuplicates.bam"
+    path "${merged_bam.simpleName}*"
 
     script:
     """
     #! /usr/bin/env bash
     picard MarkDuplicates \
-    INPUT=${readname}_MergeBamAlignment.bam \
-    OUTPUT=${readname}_MarkDuplicates.bam \
-    METRICS_FILE=${readname}_markduplicates_metrics.txt \
+    INPUT=${merged_bam} \
+    OUTPUT=${merged_bam.simpleName}_MarkDuplicates.bam \
+    METRICS_FILE=${merged_bam.simpleName}_markduplicates_metrics.txt \
     OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 \
     CREATE_INDEX=true
     """

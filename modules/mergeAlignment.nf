@@ -47,8 +47,8 @@ process MergeBamAlignment_run {
     tuple val(readname), path(read_unmapped), path(read_aligned), path(genome_fasta), path(genome_index), path(genome_coords), path(fai)
 
     output:
-    path "${readname}_merged.bam"
-    path "${readname}_merged.bai"
+    path "${readname}_merged.bam", emit: bam
+    path "${readname}_merged.bai", emit: bai
 
     script:
     """

@@ -24,8 +24,8 @@ process bwa_index {
     path(sorted_ref)
 
     output:
-    path "$sorted_ref"
-    path "$sorted_ref*"
+    path "$sorted_ref", emit: genome_fasta
+    path "$sorted_ref*", emit: genome_index
 
     script:
     """

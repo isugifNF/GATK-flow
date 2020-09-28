@@ -59,9 +59,9 @@ workflow {
   )
 
   // Single genome channel
-  genome_ch = bwa_index.out
-    .mix()
-    .collate(2,2)
+
+  genome_ch = bwa_index.out.genome_fasta
+    .combine(bwa_index.out.genome_index.toList())
     .combine(createSeqDict_run.out)
     .combine(faidx_run.out)
 
@@ -82,11 +82,12 @@ workflow {
     }
     .collate(2)
 
+
   reads_ch = read_unmapped
     .join(read_mapped)
-    .combine(genome_ch) | view
+    .combine(genome_ch)
 
-  reads_ch.take(1) | MergeBamAlignment_run
+  reads_ch | MergeBamAlignment_run
 
 /*
   MergeBamAlignment_run (

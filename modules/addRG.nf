@@ -12,11 +12,33 @@ process AddOrReplaceReadGroups_help {
 }
 
 process AddOrReplaceReadGroups_run {
-    tag "$readname"
+    tag "$marked_bam.fileName"
     label 'picard'
     publishDir "${params.outdir}/AddOrReplaceReadGroups", mode: 'copy'
 
     input:
+    path marked_bam
+
+    output:
+    path "${marked_bam.simpleName}_final.bam"
+
+    script:
+    """
+    #! /usr/bin/env bash
+    picard AddOrReplaceReadGroups \
+    INPUT=${marked_bam} \
+    OUTPUT=${marked_bam.simpleName}_final.bam \
+    RGID=4 \
+    RGLB=lib1 \
+    RGPL=illumina \
+    RGPU=unit1 \
+    RGSM=20 \
+    CREATE_INDEX=true
+    """
+}
+
+/* Scrap here
+/*
     tuple val(readname), path(readpairs)
     val(RGID)
     val(RGLB)
@@ -25,26 +47,12 @@ process AddOrReplaceReadGroups_run {
     val(RGSM)
     val(TMPDIR)
 
-    output:
-    path "${readname}_final.bam"
-
-    script:
-    """
-    #! /usr/bin/env bash
-    picard AddOrReplaceReadGroups \
-    INPUT=${readname}_MarkDuplicates.bam \
-	OUTPUT=${readname}_final.bam \
-    RGID=${RGID} \
-    RGLB=${RGLB} \
-    RGPL=${RGPL} \
-    RGPU=${RGPU} \
-    RGSM=${RGSM} \
-    CREATE_INDEX=true \
-    TMP_DIR=$TMPDIR
-    """
-}
-
-/* Scrap here
-
-
+java -jar picard.jar AddOrReplaceReadGroups \
+      I=input.bam \
+      O=output.bam \
+      RGID=4 \
+      RGLB=lib1 \
+      RGPL=illumina \
+      RGPU=unit1 \
+      RGSM=20
 */

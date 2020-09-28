@@ -26,6 +26,7 @@ include { faidx_run }        from './modules/faidx.nf'
 include { bedtools_coords }  from './modules/makeIntervals.nf'
 include { MergeBamAlignment_run; test_run } from './modules/mergeAlignment.nf'
 include { MarkDuplicates_run } from './modules/mergeDuplicates.nf'
+include { AddOrReplaceReadGroups_run } from './modules/addRG.nf'
 /* define workflow */
 
 workflow {
@@ -89,6 +90,7 @@ workflow {
 
   reads_ch | MergeBamAlignment_run 
   MergeBamAlignment_run.out.bam | MarkDuplicates_run
+  MarkDuplicates_run.out.bam | AddOrReplaceReadGroups_run
 /*
   MergeBamAlignment_run (
     bwa_index.out,

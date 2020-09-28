@@ -21,7 +21,8 @@ process MarkDuplicates_run {
     path merged_bam
 
     output:
-    path "${merged_bam.simpleName}*"
+    path "${merged_bam.simpleName}_MarkDuplicates.bam", emit: bam
+    path "${merged_bam.simpleName}*", emit: all
 
     script:
     """

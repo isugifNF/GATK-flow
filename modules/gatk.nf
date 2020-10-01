@@ -1,12 +1,14 @@
 #! /usr/bin/env nextflow
 
+/* todo: parallize the while loop */
+
 process gatk {
   label 'gatk'
   publishDir 'gatk'
 
   input:
-  path genome_fasta
-  path reads_bams
+  tuple path genome_fasta, path genome_indexes
+  tuple path reads_bams, path reads_bai
   path coord_list
   
   output:
@@ -16,10 +18,13 @@ process gatk {
   script:
   """
   #! /usr/bin/env bash
-  gatk --java-options "-Xmx80g -XX:+UseParallelGC" HaplotypeCaller \
-  -R ${genome_fasta} \
-  -I reads_bams \
-  -L chr1:1-999999 \
-  --output ${coord_list.simpleName}.vcf;
+  
+  while read LINE; do
+    gatk --java-options "-Xmx80g -XX:+UseParallelGC" HaplotypeCaller \
+    -R ${genome_fasta} \
+    -I $reads_bams \
+    -L \${LINE} \
+    --output ${reads_bam.simpleName}_\${LINE}.vcf
+  done < $coord_list
   """
 }

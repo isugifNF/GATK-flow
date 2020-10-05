@@ -22,11 +22,14 @@ fi
 ref="$1"
 name="$2"
 window=1000000
-bioawk -c fastx '{print}' $ref | sort -k1,1V | awk '{print ">"$1;print $2}' | fold > ${name}.fasta
+
+#bioawk -c fastx '{print}' $ref | sort -k1,1V | awk '{print ">"$1;print $2}' | fold > ${name}.fasta
+cat $ref | tr '\n' '\t' | sed $'s/>/\r>/g' | sort -k1 | tr '\t' '\n' > ${name}.fasta
 picard CreateSequenceDictionary REFERENCE=${name}.fasta OUTPUT=${name}.dict
 bwa index -a bwtsw ${name}.fasta
 samtools faidx ${name}.fasta
-bioawk -c fastx '{print $name"\t"length($seq)}' ${name}.fasta > ${name}.length
+#bioawk -c fastx '{print $name"\t"length($seq)}' ${name}.fasta > ${name}.length
+cat ${name}.fasta.fai | awk '{print $1"\t"$2+1}' > ${name}.length
 bedtools makewindows -w $window -g ${name}.length |\
    awk '{print $1"\t"$2+1"\t"$3}' |\
    sed 's/\t/:/1' |\

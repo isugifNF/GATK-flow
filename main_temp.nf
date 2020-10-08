@@ -220,6 +220,48 @@ process run_MergeBamAlignment {
   """
 }
 
+params.window=100000
+
+process fai_bedtools_makewindows {
+  tag "$fai"
+  label 'bedtools'
+  publishDir "${params.outdir}/bedtools"
+
+  input:
+  path fai
+
+  output:
+  path "${fai.simpleName}_coords.bed"
+  
+  script:
+  """
+  #! /usr/bin/env bash
+  awk -F'\t' '{print \$1"\t"\$2}' $fai > genome_length.txt 
+  bedtools makewindows -w $params.window -g genome_length.txt |\
+    awk '{print \$1"\t"\$2+1"\t"\$3}' |\
+    sed \$'s/\t/:/1' |\
+    sed \$'s/\t/-/g' > ${fai.simpleName}_coords.bed
+  """
+}
+
+process run_gatk_snp {
+  tag "$window"
+  label 'gatk'
+  publishDir "${params.outdir}/gatk"
+
+  input:
+  tuple val(window), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
+
+  output:
+  stdout()
+
+  script:
+  """
+  #! /usr/bin/env bash
+  echo "gatk --java-options \"-Xmx80g -XX:UseParallelGC\" HaplotypeCaller -R $genome_fasta ... -L $window --output ${window.replace(':','_')}.vcf"
+  """
+}
+
 workflow prep_genome {
   take: reference_fasta
   main:
@@ -257,12 +299,12 @@ workflow map_reads {
      reads_mapped_ch = run_bwa_mem.out.map { n -> [ n.simpleName.replaceFirst("_marked_interleaved_mapped", ""), n ] }
      reads_unmapped_ch = reads_ch.map { n -> [ n.simpleName.replaceFirst("_marked_interleaved",""), n ] }
 
-     reads_merged = reads_unmapped_ch
+     reads_merged_ch = reads_unmapped_ch
        .join(reads_mapped_ch)
        .combine(genome_ch)
   
    emit:
-     reads_merged
+     reads_merged_ch
 }
 
 workflow {
@@ -272,5 +314,10 @@ workflow {
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
  
     map_reads(reads_ch, genome_ch) | view
-  
+
+    genome_ch.map { n -> n.get(2) } | fai_bedtools_makewindows
+    gatk_input_ch = fai_bedtools_makewindows
+      .out.splitText( by:1 )
+      .map { n -> n.replaceFirst("\n","") }
+      .combine(genome_ch) | run_gatk_snp | view { "ch = $it" }
 }

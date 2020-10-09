@@ -281,7 +281,7 @@ workflow prep_reads {
   main:
     reads_fastas | paired_FastqToSAM | BAM_MarkIlluminaAdapters | BAM_SamToFastq
 
-    reads_ch = BAM_SamToFastq.out
+    reads_ch = BAM_MarkIlluminaAdapters.out
  
   emit:
     reads_ch
@@ -294,10 +294,11 @@ workflow map_reads {
 
    main:
      bwaindex_ch = genome_ch.map { n -> [ n.get(0), n.get(1) ] }
-     reads_ch.combine(bwaindex_ch) | run_bwa_mem
+     reads_ch | BAM_SamToFastq
+     BAM_SamToFastq.out.combine(bwaindex_ch) | run_bwa_mem
 
      reads_mapped_ch = run_bwa_mem.out.map { n -> [ n.simpleName.replaceFirst("_marked_interleaved_mapped", ""), n ] }
-     reads_unmapped_ch = reads_ch.map { n -> [ n.simpleName.replaceFirst("_marked_interleaved",""), n ] }
+     reads_unmapped_ch = reads_ch.map { n -> [ n.simpleName.replaceFirst("_marked",""), n ] }
 
      reads_merged_ch = reads_unmapped_ch
        .join(reads_mapped_ch)
@@ -313,7 +314,7 @@ workflow {
     genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
  
-    map_reads(reads_ch, genome_ch) | view
+    map_reads(reads_ch, genome_ch) | run_MergeBamAlignment | view
 
     genome_ch.map { n -> n.get(2) } | fai_bedtools_makewindows
     gatk_input_ch = fai_bedtools_makewindows

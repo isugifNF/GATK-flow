@@ -21,10 +21,10 @@ process fasta_sort {
   publishDir "$params.outdir/sort_fasta"
 
 
-  input: 
+  input:
   path fasta
 
-  output: 
+  output:
   path "${fasta.simpleName}_sorted.fasta"
 
   script:
@@ -42,7 +42,7 @@ process fasta_bwa_index {
   tag "$fasta"
   label 'bwa'
   publishDir "${params.outdir}/bwa"
-  
+
   input:
   path fasta
 
@@ -61,10 +61,10 @@ process fasta_samtools_faidx {
   tag "$fasta"
   label 'samtools'
   publishDir "${params.outdir}/samtools"
-  
+
   input:
   path fasta
-  
+
   output:
   path "${fasta}.fai"
 
@@ -74,7 +74,8 @@ process fasta_samtools_faidx {
   """
 }
 
-picard_app='/picard/picard.jar'
+//picard_app='java -jar /picard/picard.jar'
+picard_app='java -jar ~/bin/picard.jar'
 
 process fasta_picard_dict {
   tag "$fasta"
@@ -90,7 +91,7 @@ process fasta_picard_dict {
   script:
   """
   #! /usr/bin/env bash
-  java -jar $picard_app CreateSequenceDictionary \
+  $picard_app CreateSequenceDictionary \
     REFERENCE=${fasta} \
     OUTPUT=${fasta.simpleName}.dict
   """
@@ -109,7 +110,7 @@ process paired_FastqToSAM {
 
   """
   #! /usr/bin/env bash
-  java -jar $picard_app FastqToSam \
+  $picard_app FastqToSam \
     FASTQ=${readpairs.get(0)} \
     FASTQ2=${readpairs.get(1)} \
     OUTPUT=${readname}.bam \
@@ -117,7 +118,8 @@ process paired_FastqToSAM {
     SAMPLE_NAME=${readname}_name \
     LIBRARY_NAME=${readname}_lib \
     PLATFORM="ILLUMINA" \
-    SEQUENCING_CENTER="ISU"
+    SEQUENCING_CENTER="ISU" \
+    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
   """
 }
 
@@ -136,10 +138,11 @@ process BAM_MarkIlluminaAdapters {
   script:
   """
   #! /usr/bin/env bash
-  java -jar $picard_app MarkIlluminaAdapters \
+  $picard_app MarkIlluminaAdapters \
     I=$bam \
     O=${bam.simpleName}_marked.bam \
-    M=${bam.simpleName}_marked_metrics.txt
+    M=${bam.simpleName}_marked_metrics.txt \
+    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
   """
 }
 
@@ -157,13 +160,14 @@ process BAM_SamToFastq {
   script:
   """
   #! /usr/bin/env bash
-  java -jar $picard_app SamToFastq \
+  $picard_app SamToFastq \
     I=$bam \
     FASTQ=${bam.simpleName}_interleaved.fq \
     CLIPPING_ATTRIBUTE=XT \
     CLIPPING_ACTION=2 \
     INTERLEAVE=true \
-    NON_PF=true
+    NON_PF=true \
+    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
   """
 }
 
@@ -205,7 +209,7 @@ process run_MergeBamAlignment {
   script:
   """
   #! /usr/bin/env bash
-  java -jar $picard_app MergeBamAlignment \
+  $picard_app MergeBamAlignment \
     R=$genome_fasta \
     UNMAPPED_BAM=$read_unmapped \
     ALIGNED_BAM=$read_mapped \
@@ -217,7 +221,8 @@ process run_MergeBamAlignment {
     INCLUDE_SECONDARY_ALIGNMENTS=true \
     MAX_INSERTIONS_OR_DELETIONS=-1 \
     PRIMARY_ALIGNMENT_STRATEGY=MostDistant \
-    ATTRIBUTES_TO_RETAIN=XS
+    ATTRIBUTES_TO_RETAIN=XS \
+    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
   """
 }
 
@@ -233,11 +238,11 @@ process fai_bedtools_makewindows {
 
   output:
   path "${fai.simpleName}_coords.bed"
-  
+
   script:
   """
   #! /usr/bin/env bash
-  awk -F'\t' '{print \$1"\t"\$2}' $fai > genome_length.txt 
+  awk -F'\t' '{print \$1"\t"\$2}' $fai > genome_length.txt
   bedtools makewindows -w $params.window -g genome_length.txt |\
     awk '{print \$1"\t"\$2+1"\t"\$3}' |\
     sed \$'s/\t/:/1' |\
@@ -274,7 +279,7 @@ workflow prep_genome {
       .combine(fasta_bwa_index.out.genome_index.toList())
       .combine(fasta_samtools_faidx.out)
       .combine(fasta_picard_dict.out)
-  
+
   emit:
     genome_ch
 }
@@ -285,13 +290,13 @@ workflow prep_reads {
     reads_fastas | paired_FastqToSAM | BAM_MarkIlluminaAdapters //| BAM_SamToFastq
 
     reads_ch = BAM_MarkIlluminaAdapters.out
- 
+
   emit:
     reads_ch
 }
 
 workflow map_reads {
-   take: 
+   take:
      reads_ch
      genome_ch
 
@@ -306,7 +311,7 @@ workflow map_reads {
      reads_merged_ch = reads_unmapped_ch
        .join(reads_mapped_ch)
        .combine(genome_ch)
-  
+
    emit:
      reads_merged_ch
 }
@@ -316,18 +321,18 @@ workflow {
     //get_test_data()
     genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
- 
+
     map_reads(reads_ch, genome_ch) | run_MergeBamAlignment
 
     bam_ch = run_MergeBamAlignment.out.bam.toList() | map { it -> [it]} //| view
     bai_ch = run_MergeBamAlignment.out.bai.toList() | map { it -> [it]} //| view
-    merged_bam_ch = bam_ch.combine(bai_ch) //| view 
+    merged_bam_ch = bam_ch.combine(bai_ch) //| view
 
- 
+
     genome_ch.map { n -> n.get(2) } | fai_bedtools_makewindows
     gatk_input_ch = fai_bedtools_makewindows
       .out.splitText( by:1 )
       .map { n -> n.replaceFirst("\n","") }
       .combine(merged_bam_ch)
-      .combine(genome_ch) | run_gatk_snp 
+      .combine(genome_ch) | run_gatk_snp
 }

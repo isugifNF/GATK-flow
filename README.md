@@ -3,6 +3,36 @@ Code and Data to include in WGS Build
 
 Start with the workflow documented on [Bioinformatic Workbook GATK DNAseq Best Practices](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0)
 
+### Test dataset
+
+A simple test dataset is available (here)[/test-data]. This dataset contains a small genome (portion of chr1, B73v5), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
+Only the reads that map to the region of the v5 genome is included, so that this can be tested quickly.
+There are examples of multiple files belonging to same NAM line as well as single file per NAM line to make sure both conditions works correctly.
+The end VCF file should have exactly 27 individuals (lines) in them.
+
+* Test DataSet is on ISU Box -- [https://iastate.app.box.com/v/gatk-test-data](https://iastate.app.box.com/v/gatk-test-data)
+
+### Container 
+
+Tools required for the workflow are included in the container
+
+#### To pull the image
+
+```
+singularity pull --name gatk.sif shub://aseetharam/gatk:latest
+```
+
+#### To use the image
+
+```
+singularity exec gatk.sif samtools
+singularity exec gatk.sif bwa
+singularity exec gatk.sif datamash
+singularity exec gatk.sif gatk
+singularity exec gatk.sif java -jar /picard/picard.jar
+singularity exec gatk.sif vcftools
+```
+
 ### Running the pipeline
 
 <!--
@@ -35,19 +65,22 @@ nextflow run main.nf -profile condo
 On MacOS laptop where dependencies are locally installed:
 
 ```
-nextflow run main.nf 
-#> N E X T F L O W  ~  version 20.07.1
-#> Launching `main.nf` [magical_euler] - revision: 52b8828174
-#> [83/ebe161] process > sortSeq_run (b73_chr1_150000001-151000000.fasta)              [100%] 1 of 1 ✔
-#> [57/9cc2d8] process > createSeqDict_run (b73_chr1_150000001-151000000_sorted.fasta) [100%] 1 of 1 ✔
-#> [bd/b3d232] process > bwa_index (b73_chr1_150000001-151000000_sorted.fasta)         [100%] 1 of 1 ✔
-#> [bf/e71aeb] process > seqLength_run (b73_chr1_150000001-151000000_sorted.fasta)     [100%] 1 of 1 ✔
-#> [3d/74a9a6] process > faidx_run (b73_chr1_150000001-151000000_sorted.fasta)         [100%] 1 of 1 ✔
-#> [62/73b5fc] process > bedtools_coords (b73_chr1_150000001-151000000_sorted)         [100%] 1 of 1 ✔
-#> [BioSample18, [/Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample18_R1.fastq.gz, /Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample18_R2.fastq.gz]]
-#> [BioSample05, [/Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample05_R1.fastq.gz, /Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample05_R2.fastq.gz]]
-#> [BioSample19, [/Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample19_R1.fastq.gz, /Users/jenchang/Desktop/2020-09-10/Maize_WGS_Build/test-data/fastq/BioSample19_R2.fastq.gz]]
-#> WARN: Task runtime metrics are not reported when using macOS without a container engine
+$ nextflow run main_temp.nf --picard_app "java -jar ~/bin/picard.jar"
+
+N E X T F L O W  ~  version 20.07.1
+Launching `main_temp.nf` [loving_euclid] - revision: 11fbfd945a
+executor >  local (24)
+[2c/c03319] process > prep_genome:fasta_sort (b73_chr1_150000001-151000000.fasta)                  [100%] 1 of 1 ✔
+[98/947da7] process > prep_genome:fasta_bwa_index (b73_chr1_150000001-151000000_sorted.fasta)      [100%] 1 of 1 ✔
+[5f/a3dc4f] process > prep_genome:fasta_samtools_faidx (b73_chr1_150000001-151000000_sorted.fasta) [100%] 1 of 1 ✔
+[77/4c9fb5] process > prep_genome:fasta_picard_dict (b73_chr1_150000001-151000000_sorted.fasta)    [100%] 1 of 1 ✔
+[2e/c31cba] process > prep_reads:paired_FastqToSAM (BioSample19)                                   [100%] 3 of 3 ✔
+[39/b2bab3] process > prep_reads:BAM_MarkIlluminaAdapters (BioSample19.bam)                        [100%] 3 of 3 ✔
+[56/8606d8] process > map_reads:BAM_SamToFastq (BioSample19_marked.bam)                            [100%] 3 of 3 ✔
+[31/6b6834] process > map_reads:run_bwa_mem (BioSample19_marked_interleaved.fq)                    [100%] 3 of 3 ✔
+[4d/06ad1f] process > run_MergeBamAlignment (BioSample19)                                          [100%] 3 of 3 ✔
+[fc/e839ea] process > fai_bedtools_makewindows (b73_chr1_150000001-151000000_sorted.fasta.fai)     [100%] 1 of 1 ✔
+[2c/8fe3fc] process > run_gatk_snp (chr1:400001-500000)                                            [  0%] 0 of 10
 ```
 
 <details><summary>See generated <b>results</b> folder</summary>
@@ -111,32 +144,5 @@ All output is in a `results` folder.
 -->
 
 
-### Test dataset
 
-A simple test dataset is available (here)[/test-data]. This dataset contains a small genome (portion of chr1, B73v5), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
-Only the reads that map to the region of the v5 genome is included, so that this can be tested quickly.
-There are examples of multiple files belonging to same NAM line as well as single file per NAM line to make sure both conditions works correctly.
-The end VCF file should have exactly 27 individuals (lines) in them.
-
-* Test DataSet is on ISU Box -- [https://iastate.app.box.com/v/gatk-test-data](https://iastate.app.box.com/v/gatk-test-data)
-
-### Container 
-
-Tools required for the workflow are included in the container
-
-#### To pull the image
-
-```
-singularity pull --name gatk.sif shub://aseetharam/gatk:latest
-```
-
-#### To use the image
-
-```
-singularity exec gatk.sif samtools
-singularity exec gatk.sif bwa
-singularity exec gatk.sif datamash
-singularity exec gatk.sif gatk
-singularity exec gatk.sif picard
-```
 

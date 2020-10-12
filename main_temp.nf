@@ -199,7 +199,8 @@ process run_MergeBamAlignment {
   tuple val(readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
 
   output:
-  tuple path("${readname}_merged.bam"), path("${readname}_merged.bai")
+  path "${readname}_merged.bam", emit:'bam'
+  path "${readname}_merged.bai", emit:'bai'
 
   script:
   """
@@ -250,15 +251,17 @@ process run_gatk_snp {
   publishDir "${params.outdir}/gatk"
 
   input:
-  tuple val(window), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
+  tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
 
   output:
-  stdout()
+  path "*.vcf", emit: 'vcf'
+  path "*.vcf.idx", emit: 'idx'
 
   script:
   """
   #! /usr/bin/env bash
-  echo "gatk --java-options \"-Xmx80g -XX:UseParallelGC\" HaplotypeCaller -R $genome_fasta ... -L $window --output ${window.replace(':','_')}.vcf"
+  BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
+  gatk --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller -R $genome_fasta -I \$BAMFILES -L $window --output ${window.replace(':','_')}.vcf
   """
 }
 
@@ -279,7 +282,7 @@ workflow prep_genome {
 workflow prep_reads {
   take: reads_fastas
   main:
-    reads_fastas | paired_FastqToSAM | BAM_MarkIlluminaAdapters | BAM_SamToFastq
+    reads_fastas | paired_FastqToSAM | BAM_MarkIlluminaAdapters //| BAM_SamToFastq
 
     reads_ch = BAM_MarkIlluminaAdapters.out
  
@@ -314,11 +317,17 @@ workflow {
     genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
  
-    map_reads(reads_ch, genome_ch) | run_MergeBamAlignment | view
+    map_reads(reads_ch, genome_ch) | run_MergeBamAlignment
 
+    bam_ch = run_MergeBamAlignment.out.bam.toList() | map { it -> [it]} //| view
+    bai_ch = run_MergeBamAlignment.out.bai.toList() | map { it -> [it]} //| view
+    merged_bam_ch = bam_ch.combine(bai_ch) //| view 
+
+ 
     genome_ch.map { n -> n.get(2) } | fai_bedtools_makewindows
     gatk_input_ch = fai_bedtools_makewindows
       .out.splitText( by:1 )
       .map { n -> n.replaceFirst("\n","") }
-      .combine(genome_ch) | run_gatk_snp | view { "ch = $it" }
+      .combine(merged_bam_ch)
+      .combine(genome_ch) | run_gatk_snp 
 }

@@ -2,12 +2,13 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=16
 #SBATCH --time=24:00:00
-#SBATCH --job-name=NextFlow
+#SBATCH --job-name=NextFlow_GATK
 #SBATCH --output=R-%x.%J.out
 #SBATCH --error=R-%x.%J.err
-# --mail-user=username@email.com
-# --mail-type=begin
-# --mail-type=end
+#SBATCH --account=isu_gif_vrsc
+#SBATCH --mail-user=jenchang@iastate.edu
+#SBATCH --mail-type=begin
+#SBATCH --mail-type=end
 
 set -e
 set -u
@@ -16,8 +17,9 @@ start=`date +%s`
 
 # === Load Modules here
 # module load nextflow                         # If on Ceres HPC
-module load gcc/7.3.0-xegsmw4 nextflow       # If on Condo HPC, don't know why this seems more complicated
-
+# module load gcc/7.3.0-xegsmw4 nextflow       # If on Condo HPC, don't know why this seems more complicated
+module load singularity
+NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 # === Set working directory and in/out variables
 cd ${SLURM_SUBMIT_DIR}
 
@@ -26,7 +28,7 @@ cd ${SLURM_SUBMIT_DIR}
 # module list >> LOGGER.txt
 # ls -ltr ${INPUT}    # <= list any input files here
 # === Main Program
-nextflow run main.nf -profile condo -resume
+${NEXTFLOW} run main_temp.nf -profile slurm,singularity -resume
 
 end=`date +%s`
 

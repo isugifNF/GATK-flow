@@ -321,6 +321,10 @@ workflow {
     //get_test_data()
     genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
+   
+    // Use the following if files are listed from the "read-group.txt" file, requires full path names
+    // reads_ch = channel.fromPath(params.reads_file, checkIfExists:true).splitCsv(sep:'\t') |
+    //   map { n -> [ n.get(0), [ n.get(1), n.get(2) ]] } | prep_reads
 
     map_reads(reads_ch, genome_ch) | run_MergeBamAlignment
 

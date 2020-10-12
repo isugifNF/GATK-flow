@@ -53,7 +53,7 @@ process fasta_bwa_index {
   script:
   """
   #! /usr/bin/env bash
-  bwa index $fasta
+  $bwa_app index $fasta
   """
 }
 
@@ -70,12 +70,12 @@ process fasta_samtools_faidx {
 
   """
   #! /usr/bin/env bash
-  samtools faidx $fasta
+  $samtools_app faidx $fasta
   """
 }
 
 //picard_app='java -jar /picard/picard.jar'
-picard_app='java -jar ~/bin/picard.jar'
+//picard_app='java -jar ~/bin/picard.jar'
 
 process fasta_picard_dict {
   tag "$fasta"
@@ -185,7 +185,7 @@ process run_bwa_mem {
   script:
   """
   #! /usr/bin/env bash
-  bwa mem \
+  $bwa_app mem \
    -M \
    -t 15 \
    -p ${genome_fasta} \
@@ -243,7 +243,7 @@ process fai_bedtools_makewindows {
   """
   #! /usr/bin/env bash
   awk -F'\t' '{print \$1"\t"\$2}' $fai > genome_length.txt
-  bedtools makewindows -w $params.window -g genome_length.txt |\
+  $bedtools_app makewindows -w $params.window -g genome_length.txt |\
     awk '{print \$1"\t"\$2+1"\t"\$3}' |\
     sed \$'s/\t/:/1' |\
     sed \$'s/\t/-/g' > ${fai.simpleName}_coords.bed
@@ -266,7 +266,7 @@ process run_gatk_snp {
   """
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
-  gatk --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller -R $genome_fasta -I \$BAMFILES -L $window --output ${window.replace(':','_')}.vcf
+  $gatk_app --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller -R $genome_fasta -I \$BAMFILES -L $window --output ${window.replace(':','_')}.vcf
   """
 }
 

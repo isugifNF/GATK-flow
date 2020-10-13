@@ -2,6 +2,43 @@
 
 nextflow.enable.dsl=2
 
+def helpMsg() {
+  log.info """
+   Usage:
+   The typical command for running the pipeline is as follows:
+   nextflow run main.nf --genome GENOME.fasta --reads READS_{R1,R2}.fastq.gz -profile singularity
+   nextflow run main.nf --genome GENOME.fasta --reads_file READ_PATHS.txt -profile singularity
+
+   Mandatory arguments:
+    --genome                Genome fasta file, against which reads will be mapped to find SNPs
+    --reads                 Paired-end reads in fastq.gz format, will need to specify glob (e.g. "*_{R1,R2}.fastq.gz")
+    or
+    --genome                Genome fasta file, against which reads will be mapped to find SNPs
+    --reads_file            Text file (tab delimited) with three columns [readname left_fastq.gz right_fastq.gz]. Will need full path for files.
+
+   Optional configuration arguments:
+    -profile                Configuration profile to use. Can use multiple (comma separated)
+                            Available: local, condo, atlas, singularity [default:local]
+    --singularity_img       Singularity image to use if [-profile singularity] is used [default:'shub://aseetharam/gatk:latest']
+    --bwa_app               Link to bwa executable [default: 'bwa']
+    --samtools_app          Link to samtools executable [default: 'samtools']
+    --picard_app            Link to picard executable [default: 'picard'], might want to change to "java -jar ~/PICARD_HOME/picard.jar"
+    --bedtools_app          Link to bedtools executable [default: 'bedtools']
+    --gatk_app              Link to gatk executable [default: 'gatk']
+    --datamash_app          Link to datamash executable [default: 'datamash']
+    --vcftools_app          Link to vcftools executable [default: 'vcftools']
+
+   Optional other arguments:
+    --queueSize
+    --help
+"""
+}
+
+if(params.help){
+  helpMsg()
+  exit 0
+}
+
 process get_test_data {
   publishDir './', mode: 'move'
 

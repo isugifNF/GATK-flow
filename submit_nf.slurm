@@ -5,10 +5,10 @@
 #SBATCH --job-name=NextFlow_GATK
 #SBATCH --output=R-%x.%J.out
 #SBATCH --error=R-%x.%J.err
-# --account=isu_gif_vrsc
 # --mail-user=username@email.com
 # --mail-type=begin
 # --mail-type=end
+# --account=isu_gif_vrsc
 
 set -e
 set -u
@@ -28,7 +28,7 @@ cd ${SLURM_SUBMIT_DIR}
 # module list >> LOGGER.txt
 # ls -ltr ${INPUT}    # <= list any input files here
 # === Main Program
-${NEXTFLOW} run main_temp.nf -profile slurm,singularity -resume
+${NEXTFLOW} run main.nf -profile slurm,singularity -resume
 
 end=`date +%s`
 

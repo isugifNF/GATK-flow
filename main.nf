@@ -6,7 +6,7 @@ def helpMsg() {
   log.info """
    Usage:
    The typical command for running the pipeline is as follows:
-   nextflow run main.nf --genome GENOME.fasta --reads READS_{R1,R2}.fastq.gz -profile singularity
+   nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile singularity
    nextflow run main.nf --genome GENOME.fasta --reads_file READ_PATHS.txt -profile singularity
 
    Mandatory arguments:
@@ -19,7 +19,7 @@ def helpMsg() {
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, condo, atlas, singularity [default:local]
-    --singularity_img       Singularity image to use if [-profile singularity] is used [default:'shub://aseetharam/gatk:latest']
+    --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
     --bwa_app               Link to bwa executable [default: 'bwa']
     --samtools_app          Link to samtools executable [default: 'samtools']
     --picard_app            Link to picard executable [default: 'picard'], might want to change to "java -jar ~/PICARD_HOME/picard.jar"
@@ -29,12 +29,34 @@ def helpMsg() {
     --vcftools_app          Link to vcftools executable [default: 'vcftools']
 
    Optional other arguments:
-    --queueSize
+    --window                Window size passed to bedtools for gatk [default:100000]
+    --queueSize             Maximum jobs to submit to slurm [default:18]
     --help
 """
 }
 
 if(params.help){
+  helpMsg()
+  exit 0
+}
+
+if(!params.genome) {
+  log.info"""
+#===============
+  ERROR: --genome GENOME.fasta    A reference genome file is required!
+#===============
+  """
+  helpMsg()
+  exit 0
+}
+
+if(!params.reads & !params.reads_file){
+  log.info"""
+#===============
+  ERROR: --reads "*_{r1,r2}.fq.gz"     Paired-end read files are required! Either as a glob or as a tab-delimited text file
+         --reads_file READS_FILE.txt
+#===============
+  """
   helpMsg()
   exit 0
 }
@@ -344,6 +366,7 @@ process vcftools_snp_only {
 }
 
 process run_SortVCF {
+  tag "$vcf.fileName"
   label 'picard'
   publishDir "$params.outdir/picard"
 
@@ -379,12 +402,14 @@ process calc_DPvalue {
   """
   #! /usr/bin/env bash
   grep -v "^#" $sorted_vcf | cut -f 8 | grep -oe ";DP=.*" | cut -f 2 -d ';' | cut -f 2 -d "=" > dp.txt
-  cat dp.txt | datamash mean 1 sstdev 1 > dp.stats
+  cat dp.txt | $datamash_app mean 1 sstdev 1 > dp.stats
   cat dp.stats | awk '{print \$1+5*\$2}'
   """
 }
 
 process gatk_VariantFiltration {
+  tag "$sorted_snp_vcf.fileName"
+
   input:
   tuple path(sorted_snp_vcf), val(dp), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
 
@@ -407,6 +432,8 @@ process gatk_VariantFiltration {
 // java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
 
 process keep_only_pass {
+  tag "$snp_marked_vcf.fileName"
+
   input:
   path(snp_marked_vcf)
 
@@ -468,13 +495,16 @@ workflow map_reads {
 
 workflow {
   main:
-    //get_test_data()
+    if ("$workflow.profile"=~/testdata/) {
+      get_test_data()
+    } else {
     genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
-    reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
-
-    // Use the following if files are listed from the "read-group.txt" file, requires full path names
-    // reads_ch = channel.fromPath(params.reads_file, checkIfExists:true).splitCsv(sep:'\t') |
-    //   map { n -> [ n.get(0), [ n.get(1), n.get(2) ]] } | prep_reads
+    if (params.reads) {
+      reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
+    } else {
+      reads_ch = channel.fromPath(params.reads_file, checkIfExists:true).splitCsv(sep:'\t') |
+         map { n -> [ n.get(0), [ n.get(1), n.get(2) ]] } | prep_reads
+    }
 
     map_reads(reads_ch, genome_ch) | run_MergeBamAlignment
 
@@ -505,5 +535,6 @@ workflow {
       gatk_VariantFiltration |
       keep_only_pass |
       view
+    }
 
 }

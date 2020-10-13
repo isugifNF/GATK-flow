@@ -12,7 +12,7 @@ The end VCF file should have exactly 27 individuals (lines) in them.
 
 * Test DataSet is on ISU Box -- [https://iastate.app.box.com/v/gatk-test-data](https://iastate.app.box.com/v/gatk-test-data)
 
-### Container 
+### Container
 
 Tools required for the workflow are included in the container
 
@@ -38,13 +38,13 @@ singularity exec gatk.sif vcftools
 <!--
 >
 > If on a local laptop with nextflow installed:
-> 
+>
 > ```
 > nextflow run HuffordLab/Maize_WGS_Build
 > ```
-> 
+>
 > If on HPCC Condo:
-> 
+>
 > ```
 > module load gcc/7.3.0-xegsmw4 nextflow
 > nextflow run HuffordLab/Maize_WGS_Build -profile condo
@@ -68,19 +68,27 @@ On MacOS laptop where dependencies are locally installed:
 $ nextflow run main_temp.nf --picard_app "java -jar ~/bin/picard.jar"
 
 N E X T F L O W  ~  version 20.07.1
-Launching `main_temp.nf` [loving_euclid] - revision: 11fbfd945a
-executor >  local (24)
-[2c/c03319] process > prep_genome:fasta_sort (b73_chr1_150000001-151000000.fasta)                  [100%] 1 of 1 ✔
-[98/947da7] process > prep_genome:fasta_bwa_index (b73_chr1_150000001-151000000_sorted.fasta)      [100%] 1 of 1 ✔
-[5f/a3dc4f] process > prep_genome:fasta_samtools_faidx (b73_chr1_150000001-151000000_sorted.fasta) [100%] 1 of 1 ✔
-[77/4c9fb5] process > prep_genome:fasta_picard_dict (b73_chr1_150000001-151000000_sorted.fasta)    [100%] 1 of 1 ✔
-[2e/c31cba] process > prep_reads:paired_FastqToSAM (BioSample19)                                   [100%] 3 of 3 ✔
-[39/b2bab3] process > prep_reads:BAM_MarkIlluminaAdapters (BioSample19.bam)                        [100%] 3 of 3 ✔
-[56/8606d8] process > map_reads:BAM_SamToFastq (BioSample19_marked.bam)                            [100%] 3 of 3 ✔
-[31/6b6834] process > map_reads:run_bwa_mem (BioSample19_marked_interleaved.fq)                    [100%] 3 of 3 ✔
-[4d/06ad1f] process > run_MergeBamAlignment (BioSample19)                                          [100%] 3 of 3 ✔
-[fc/e839ea] process > fai_bedtools_makewindows (b73_chr1_150000001-151000000_sorted.fasta.fai)     [100%] 1 of 1 ✔
-[2c/8fe3fc] process > run_gatk_snp (chr1:400001-500000)                                            [  0%] 0 of 10
+Launching `main_temp.nf` [amazing_rubens] - revision: 66f7e69455
+[a4/41e1ad] process > prep_genome:fasta_sort (b73_chr1_150000001-151000000.fasta)                  [100%] 1 of 1, cached: 1 ✔
+[f4/b63b1b] process > prep_genome:fasta_bwa_index (b73_chr1_150000001-151000000_sorted.fasta)      [100%] 1 of 1, cached: 1 ✔
+[da/436b26] process > prep_genome:fasta_samtools_faidx (b73_chr1_150000001-151000000_sorted.fasta) [100%] 1 of 1, cached: 1 ✔
+[18/1d2871] process > prep_genome:fasta_picard_dict (b73_chr1_150000001-151000000_sorted.fasta)    [100%] 1 of 1, cached: 1 ✔
+[f8/12a295] process > prep_reads:paired_FastqToSAM (BioSample05)                                   [100%] 3 of 3, cached: 3 ✔
+[41/2ca9e5] process > prep_reads:BAM_MarkIlluminaAdapters (BioSample05.bam)                        [100%] 3 of 3, cached: 3 ✔
+[35/7b205c] process > map_reads:BAM_SamToFastq (BioSample05_marked.bam)                            [100%] 3 of 3, cached: 3 ✔
+[4b/529b7c] process > map_reads:run_bwa_mem (BioSample05_marked_interleaved.fq)                    [100%] 3 of 3, cached: 3 ✔
+[d7/4d996a] process > run_MergeBamAlignment (BioSample05)                                          [100%] 3 of 3, cached: 3 ✔
+[f4/ebf7ef] process > fai_bedtools_makewindows (b73_chr1_150000001-151000000_sorted.fasta.fai)     [100%] 1 of 1, cached: 1 ✔
+[5a/44739d] process > run_gatk_snp (chr1:900001-999999)                                            [100%] 10 of 10, cached: 10 ✔
+[5e/ca4c3a] process > merge_vcf                                                                    [100%] 1 of 1, cached: 1 ✔
+[4e/43bf37] process > vcftools_snp_only (first-round_merged.vcf)                                   [100%] 1 of 1, cached: 1 ✔
+[25/924b29] process > run_SortVCF (1)                                                              [100%] 1 of 1, cached: 1 ✔
+[31/b276cb] process > calc_DPvalue (first-round_merged_snps-only.sorted.vcf)                       [100%] 1 of 1, cached: 1 ✔
+[4a/17fb0b] process > gatk_VariantFiltration (1)                                                   [100%] 1 of 1, cached: 1 ✔
+[88/bcb457] process > keep_only_pass (1)                                                           [100%] 1 of 1, cached: 1 ✔
+406.235
+
+/Users/jenchang/Desktop/new/Maize_WGS_Build/work/88/bcb45710b109051ac54bbb0b2fb682/first-round_merged_snps-only_snp-only.pass-only.vcf
 ```
 
 <details><summary>See generated <b>results</b> folder</summary>
@@ -128,7 +136,7 @@ nextflow run main.nf -profile condo
 All output is in a `results` folder.
 
 <details><summary>See explaination of <b>results</b> folder</summary>
-  
+
   ```
   results/
     |_ report.html       # detailed breakdown of which processes where run on what input
@@ -138,11 +146,7 @@ All output is in a `results` folder.
     |_ 0_index/          # Contains the genome index files generated by gatk0
     |_ ....
   ```
-  
+
 </details>
 
 -->
-
-
-
-

@@ -46,9 +46,8 @@ process fasta_bwa_index {
   input:
   path fasta
 
-  output:
-  path "$fasta", emit: genome_fasta
-  path "${fasta}*", emit: genome_index
+  output: // [genome.fasta, [genome_index files]]
+  tuple path("$fasta"), path("${fasta}*")
 
   script:
   """
@@ -73,9 +72,6 @@ process fasta_samtools_faidx {
   $samtools_app faidx $fasta
   """
 }
-
-//picard_app='java -jar /picard/picard.jar'
-//picard_app='java -jar ~/bin/picard.jar'
 
 process fasta_picard_dict {
   tag "$fasta"
@@ -270,13 +266,130 @@ process run_gatk_snp {
   """
 }
 
+process merge_vcf {
+  publishDir "${params.outdir}/vcftools"
+
+  input:
+  path(vcfs)
+
+  output:
+  path "first-round_merged.vcf"
+
+  script:
+  """
+  #! /usr/bin/env bash
+  cat ${vcfs.get(0)} | grep "^#" > first-round_merged.vcf
+  cat ${vcfs} | grep -v "^#" >> first-round_merged.vcf
+  """
+}
+
+process vcftools_snp_only {
+  tag "${merged_vcf.fileName}"
+  label 'vcftools'
+  publishDir "${params.outdir}/vcftools"
+
+  input:
+  path merged_vcf
+
+  output:
+  path "${merged_vcf.simpleName}_snps-only.*"
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $vcftools_app \
+    --vcf $merged_vcf \
+      --remove-indels \
+      --recode \
+      --recode-INFO-all \
+      --out ${merged_vcf.simpleName}_snps-only
+  """
+}
+
+process run_SortVCF {
+  label 'picard'
+  publishDir "$params.outdir/picard"
+
+  input:
+  tuple path(vcf), path(dict)
+
+  output:
+  tuple path ("*.vcf"), path("*.vcf.*")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $picard_app SortVcf \
+    INPUT=$vcf \
+    SEQUENCE_DICTIONARY=$dict \
+    CREATE_INDEX=true \
+    OUTPUT=${vcf.simpleName}.sorted.vcf
+  """
+}
+// java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
+
+process calc_DPvalue {
+  tag "$sorted_vcf.fileName"
+  label 'datamash'
+
+  input:
+  path(sorted_vcf)
+
+  output:
+  stdout()
+
+  script:
+  """
+  #! /usr/bin/env bash
+  grep -v "^#" $sorted_vcf | cut -f 8 | grep -oe ";DP=.*" | cut -f 2 -d ';' | cut -f 2 -d "=" > dp.txt
+  cat dp.txt | datamash mean 1 sstdev 1 > dp.stats
+  cat dp.stats | awk '{print \$1+5*\$2}'
+  """
+}
+
+process gatk_VariantFiltration {
+  input:
+  tuple path(sorted_snp_vcf), val(dp), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
+
+  output:
+  path("${sorted_snp_vcf.simpleName}.marked.vcf")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $gatk_app VariantFiltration \
+    --reference $genome_fasta \
+    --sequence-dictionary $genome_dict \
+    --variant $sorted_snp_vcf \
+    --filter-expression \"QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || DP > $dp\" \
+    --filter-name "FAIL" \
+    --output ${sorted_snp_vcf.simpleName}.marked.vcf
+  """
+}
+
+// java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
+
+process keep_only_pass {
+  input:
+  path(snp_marked_vcf)
+
+  output:
+  path("${snp_marked_vcf.simpleName}_snp-only.pass-only.vcf")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  cat $snp_marked_vcf | grep "^#" > ${snp_marked_vcf.simpleName}_snp-only.pass-only.vcf
+  cat $snp_marked_vcf | grep -v "^#" | awk '\$7=="PASS"' >> ${snp_marked_vcf.simpleName}_snp-only.pass-only.vcf
+  """
+}
+
 workflow prep_genome {
   take: reference_fasta
   main:
     fasta_sort(reference_fasta) | (fasta_bwa_index & fasta_samtools_faidx & fasta_picard_dict )
 
-    genome_ch = fasta_bwa_index.out.genome_fasta
-      .combine(fasta_bwa_index.out.genome_index.toList())
+    genome_ch = fasta_bwa_index.out
       .combine(fasta_samtools_faidx.out)
       .combine(fasta_picard_dict.out)
 
@@ -321,7 +434,7 @@ workflow {
     //get_test_data()
     genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
-   
+
     // Use the following if files are listed from the "read-group.txt" file, requires full path names
     // reads_ch = channel.fromPath(params.reads_file, checkIfExists:true).splitCsv(sep:'\t') |
     //   map { n -> [ n.get(0), [ n.get(1), n.get(2) ]] } | prep_reads
@@ -332,11 +445,28 @@ workflow {
     bai_ch = run_MergeBamAlignment.out.bai.toList() | map { it -> [it]} //| view
     merged_bam_ch = bam_ch.combine(bai_ch) //| view
 
+    genome_ch.map { n -> n.get(2) } |
+      fai_bedtools_makewindows |
+      splitText( by:1 ) |
+      map { n -> n.replaceFirst("\n","") } |
+      combine(merged_bam_ch) |
+      combine(genome_ch) |
+      run_gatk_snp
 
-    genome_ch.map { n -> n.get(2) } | fai_bedtools_makewindows
-    gatk_input_ch = fai_bedtools_makewindows
-      .out.splitText( by:1 )
-      .map { n -> n.replaceFirst("\n","") }
-      .combine(merged_bam_ch)
-      .combine(genome_ch) | run_gatk_snp
+    run_gatk_snp.out.vcf.toList() |
+      merge_vcf |
+      vcftools_snp_only |
+      combine(genome_ch.map {n -> n.get(3)}) |
+      run_SortVCF |
+      map{n->n.get(0)} |
+      calc_DPvalue |
+      view
+
+    run_SortVCF.out.map{n -> n.get(0)} |
+      combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")}) |
+      combine(genome_ch) |
+      gatk_VariantFiltration |
+      keep_only_pass |
+      view
+
 }

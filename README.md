@@ -51,18 +51,35 @@ singularity exec gatk.sif vcftools
 > ```
 -->
 
-On HPCC Condo:
+(1) On HPCC (condo/nova/atlas)
 
 ```
+# Fetch repo
 git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd Maize_WGS_Build
-# Fetch dataset from ISU box here and place in `test-data` folder
 
-module load gcc/7.3.0-xegsmw4 nextflow
-nextflow run main.nf -profile condo
+# Fetch dataset from ISU box here and place in `test-data` folder
+wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
 ```
 
-On MacOS laptop where dependencies are locally installed:
+(1a) Condo HPC, using singularity
+
+  ```
+  module load gcc/7.3.0-xegsmw4 nextflow
+  module load singularity
+  nextflow run main_temp.nf -profile slurm,singularity -resume
+  ```
+  
+(1b) Atlas HPC, using singularity
+
+  ```
+  module load singularity
+  NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+  ${NEXTFOW} run main_temp.nf -profile atlas,singularity -resume
+  ```
+
+(2) On MacOS laptop where dependencies are locally installed:
 
 ```
 $ nextflow run main_temp.nf --picard_app "java -jar ~/bin/picard.jar"

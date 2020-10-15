@@ -78,6 +78,36 @@ tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
   NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
   ${NEXTFOW} run main_temp.nf -profile atlas,singularity -resume
   ```
+  
+ Example run on Atlas with 27 Illumina paired-end reads (listed in `my_group.txt`) against genome (`ref/b73_chr1_150000001-151000000.fasta`).
+ 
+  ```
+  nextflow run HuffordLab/Maize_WGS_Build -r dev_jennifer \
+    -profile atlas,singularity \
+    --reads_file my_group.txt \
+    --genome test-data/ref/b73_chr1_150000001-151000000.fasta
+
+  N E X T F L O W  ~  version 20.07.1
+  Launching `HuffordLab/Maize_WGS_Build` [special_kowalevski] - revision: 4e0d86db72 [dev_jennifer]
+  executor >  slurm (150)
+  [b9/51a78c] process > prep_genome:fasta_sort (b73... [100%] 1 of 1 ✔
+  [ae/b743bd] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
+  [f5/4e914b] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
+  [be/d21a0d] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
+  [fc/b54240] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
+  [ad/50c6b6] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
+  [48/0721fa] process > map_reads:BAM_SamToFastq (B... [100%] 27 of 27 ✔
+  [82/7aa82d] process > map_reads:run_bwa_mem (B24_... [100%] 27 of 27 ✔
+  [96/56f2c6] process > run_MergeBamAlignment (B02)    [100%] 27 of 27 ✔
+  [82/c5cc00] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
+  [a4/9badc8] process > run_gatk_snp (chr1:900001-9... [  0%] 0 of 10
+  [-        ] process > merge_vcf                      -
+  [-        ] process > vcftools_snp_only              -
+  [-        ] process > run_SortVCF                    -
+  [-        ] process > calc_DPvalue                   -
+  [-        ] process > gatk_VariantFiltration         -
+  [-        ] process > keep_only_pass                 -
+  ```
 
 (2) On MacOS laptop where dependencies are locally installed:
 

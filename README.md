@@ -86,10 +86,8 @@ tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
     -profile atlas,singularity \
     --reads_file my_group.txt \
     --genome test-data/ref/b73_chr1_150000001-151000000.fasta
-
-  N E X T F L O W  ~  version 20.07.1
-  Launching `HuffordLab/Maize_WGS_Build` [special_kowalevski] - revision: 4e0d86db72 [dev_jennifer]
-  executor >  slurm (150)
+    
+  executor >  slurm (156)
   [b9/51a78c] process > prep_genome:fasta_sort (b73... [100%] 1 of 1 ✔
   [ae/b743bd] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
   [f5/4e914b] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
@@ -100,13 +98,20 @@ tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
   [82/7aa82d] process > map_reads:run_bwa_mem (B24_... [100%] 27 of 27 ✔
   [96/56f2c6] process > run_MergeBamAlignment (B02)    [100%] 27 of 27 ✔
   [82/c5cc00] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
-  [a4/9badc8] process > run_gatk_snp (chr1:900001-9... [  0%] 0 of 10
-  [-        ] process > merge_vcf                      -
-  [-        ] process > vcftools_snp_only              -
-  [-        ] process > run_SortVCF                    -
-  [-        ] process > calc_DPvalue                   -
-  [-        ] process > gatk_VariantFiltration         -
-  [-        ] process > keep_only_pass                 -
+  [a4/9badc8] process > run_gatk_snp (chr1:900001-9... [100%] 10 of 10 ✔
+  [49/17f481] process > merge_vcf                      [100%] 1 of 1 ✔
+  [02/c5fe0a] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
+  [90/312c78] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
+  [5c/fd7ee1] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
+  [10/26a37d] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
+  [d5/d4fad2] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
+  2260.74
+
+  /project/isu_gif_vrsc/Jennifer/github/blank/work/d5/d4fad26c33b234ab856e600353ebb0/first-round_merged_snps-only_snp-only.pass-only.vcf
+  Completed at: 15-Oct-2020 14:00:31
+  Duration    : 51m 8s
+  CPU hours   : 6.1
+  Succeeded   : 156
   ```
 
 (2) On MacOS laptop where dependencies are locally installed:

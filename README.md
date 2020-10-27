@@ -95,6 +95,32 @@ Usage:
 
 </details>
 
+### Singularity Container
+
+Tools required for the workflow are included in the container [aseetharam/gatk:latest](https://github.com/aseetharam/gatk).
+
+<details><summary>More Info</summary>
+
+#### To pull the image
+
+```
+singularity pull --name gatk.sif shub://aseetharam/gatk:latest
+```
+
+#### To use the image
+
+```
+singularity exec gatk.sif samtools
+singularity exec gatk.sif bwa
+singularity exec gatk.sif datamash
+singularity exec gatk.sif gatk
+singularity exec gatk.sif java -jar /picard/picard.jar
+singularity exec gatk.sif vcftools
+```
+
+</details>
+
+
 ## Test Dataset
 
 A simple test dataset (`test-data`) is available on [ISU Box](https://iastate.app.box.com/v/gatk-test-data). This dataset contains a small genome (portion of chr1, B73v5 ), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
@@ -113,27 +139,7 @@ ls -1 test-data/
 #> ref            # <= folder containing one genome reference
 ```
 
-<!-- ### Container
 
-Tools required for the workflow are included in the container
-
-#### To pull the image
-
-```
-singularity pull --name gatk.sif shub://aseetharam/gatk:latest
-```
-
-#### To use the image
-
-```
-singularity exec gatk.sif samtools
-singularity exec gatk.sif bwa
-singularity exec gatk.sif datamash
-singularity exec gatk.sif gatk
-singularity exec gatk.sif java -jar /picard/picard.jar
-singularity exec gatk.sif vcftools
-```
---> 
 
 ## Running the Pipeline
 

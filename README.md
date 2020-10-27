@@ -239,8 +239,31 @@ BioSample05	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample05_R1.fastq
 
 The Final output will be in a `results` folder. SNPs will be in the VCF file, probably the file with the longest name (e.g. `first-round_merged_snps-only_snp-only.pass-only.vcf`).
 
+<details><summary>See <b>results</b> folder</summary>
+
+```
+ls -ltrh results/
+total 5.8M
+drwxr-s--- 2 user proj 4.0K Oct 12 23:55 sort_fasta/    # <= folders contain intermediate files
+drwxr-s--- 2 user proj 4.0K Oct 12 23:55 samtools/
+drwxr-s--- 2 user proj 4.0K Oct 12 23:55 bwa/
+drwxr-s--- 2 user proj 4.0K Oct 12 23:56 bedtools/
+drwxr-s--- 2 user proj 4.0K Oct 12 23:56 bwa_mem/
+drwxr-s--- 2 user proj 4.0K Oct 13 00:01 gatk/
+drwxr-s--- 2 user proj 4.0K Oct 13 00:01 vcftools/
+drwxr-s--- 2 user proj 4.0K Oct 13 00:01 picard/
+lrwxrwxrwx 1 user proj  132 Oct 13 00:02 first-round_merged_snps-only.marked.vcf
+lrwxrwxrwx 1 user proj  144 Oct 13 00:02 first-round_merged_snps-only_snp-only.pass-only.vcf # <= Final SNP file
+-rw-r----- 1 user proj  16K Oct 13 00:02 timeline.html  # <= shows runtime for each portion
+-rw-r----- 1 user proj 2.9M Oct 13 00:02 report.html    # <= shows resource use
+```
+
+</details>
+
 ## Example Runs
-  
+
+Some example runs provided to show nextflow output. May need to be rerun.
+
 <details><summary>See example run on <b>Atlas HPC</b></summary>
 
  Example run on Atlas with 27 Illumina paired-end reads (listed in `my_group.txt`) against genome (`ref/b73_chr1_150000001-151000000.fasta`).

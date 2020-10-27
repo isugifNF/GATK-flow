@@ -1,18 +1,115 @@
-# Maize_WGS_Build
-Code and Data to include in WGS Build
+# Maize WGS Build
 
-Start with the workflow documented on [Bioinformatic Workbook GATK DNAseq Best Practices](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0)
+<hr/>
 
-### Test dataset
+A [Nextflow](https://www.nextflow.io/) wrapper for the [Genome Analysis Toolkit (GATK)](https://gatk.broadinstitute.org/hc/en-us), modified from the pipeline described in the Bioinformatic Workbook: [GATK Best Practices Workflow for DNA-Seq](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0).
 
-A simple test dataset is available (here)[/test-data]. This dataset contains a small genome (portion of chr1, B73v5), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
+<!-- The benefits of Nextflow include:
+
+* write once, run anywhere (`configs/*.config` for singularity, slurm, local)
+* checkpointing and runtime reports
+* customizing for a particular HPC
+-->
+
+<!--### Dependencies
+
+For portability, the dependencies for the GATK pipeline are provided as a singularity image. To avoid singularity, the individual programs (`bwa`, `samtools`, `picard`, `bedtools`, `gatk`, `vcftools`) can be configured directly, see help statement (e.g. `--samtools_app`) under "Installation".
+
+* [Nextflow](https://www.nextflow.io/)
+* Singularity Image File
+* Input files:
+  * genome file (`some_genome.fasta`) 
+  * Illumina Paired End reads (`reads_R1.fastq`, `reads_R2.fastq.gz`)
+-->
+
+### Installation
+
+You will need a working version of nextflow, [see here](https://www.nextflow.io/docs/latest/getstarted.html#requirements) on how to install nextflow. Nextflow modules are avialble on some of the HPC computing resources.
+
+<details><summary>See modules on HPC clusters</summary>
+
+```
+# === Nova
+module load gcc/7.3.0-xegsmw4 nextflow
+module load singularity
+NEXTFLOW=nextflow
+
+# === Condo
+module load gcc/7.3.0-xegsmw4 nextflow
+module load singularity
+NEXTFLOW=nextflow
+
+# === Ceres
+module load nextflow
+module load singularity
+NEXTFLOW=nextflow
+
+# === Atlas
+module load singularity
+NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+```
+
+</details>
+
+
+```
+git clone https://github.com/HuffordLab/Maize_WGS_Build.git
+cd Maize_WGS_Build
+
+nextflow run main.nf --help
+```
+
+<details><summary>See help statement</summary>
+
+```
+N E X T F L O W  ~  version 20.07.1
+Launching `main.nf` [zen_woese] - revision: 0516af2de3
+Usage:
+   The typical command for running the pipeline is as follows:
+   nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile singularity
+   nextflow run main.nf --genome GENOME.fasta --reads_file READ_PATHS.txt -profile singularity
+
+   Mandatory arguments:
+    --genome                Genome fasta file, against which reads will be mapped to find SNPs
+    --reads                 Paired-end reads in fastq.gz format, will need to specify glob (e.g. "*_{R1,R2}.fastq.gz")
+    or
+    --genome                Genome fasta file, against which reads will be mapped to find SNPs
+    --reads_file            Text file (tab delimited) with three columns [readname left_fastq.gz right_fastq.gz]. Will need full path for files.
+
+   Optional configuration arguments:
+    -profile                Configuration profile to use. Can use multiple (comma separated)
+                            Available: local, condo, atlas, singularity [default:local]
+    --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
+    --bwa_app               Link to bwa executable [default: 'bwa']
+    --samtools_app          Link to samtools executable [default: 'samtools']
+    --picard_app            Link to picard executable [default: 'picard'], might want to change to "java -jar ~/PICARD_HOME/picard.jar"
+    --bedtools_app          Link to bedtools executable [default: 'bedtools']
+    --gatk_app              Link to gatk executable [default: 'gatk']
+    --datamash_app          Link to datamash executable [default: 'datamash']
+    --vcftools_app          Link to vcftools executable [default: 'vcftools']
+
+   Optional other arguments:
+    --window                Window size passed to bedtools for gatk [default:100000]
+    --queueSize             Maximum jobs to submit to slurm [default:18]
+    --help
+```
+
+</details>
+
+### Test Dataset
+
+A simple test dataset (`test-data`) is available on [ISU Box](https://iastate.app.box.com/v/gatk-test-data). This dataset contains a small genome (portion of chr1, B73v5 ), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
 Only the reads that map to the region of the v5 genome is included, so that this can be tested quickly.
 There are examples of multiple files belonging to same NAM line as well as single file per NAM line to make sure both conditions works correctly.
 The end VCF file should have exactly 27 individuals (lines) in them.
 
-* Test DataSet is on ISU Box -- [https://iastate.app.box.com/v/gatk-test-data](https://iastate.app.box.com/v/gatk-test-data)
 
-### Container
+```
+wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+```
+
+<!-- ### Container
 
 Tools required for the workflow are included in the container
 
@@ -32,8 +129,9 @@ singularity exec gatk.sif gatk
 singularity exec gatk.sif java -jar /picard/picard.jar
 singularity exec gatk.sif vcftools
 ```
+--> 
 
-### Running the pipeline
+### Running the Pipeline
 
 <!--
 >
@@ -51,38 +149,50 @@ singularity exec gatk.sif vcftools
 > ```
 -->
 
-(1) On HPCC (condo/nova/atlas)
+Fetch the pipeline and fetch the test-data folder.
 
 ```
 # Fetch repo
 git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd Maize_WGS_Build
 
-# Fetch dataset from ISU box here and place in `test-data` folder
+# Fetch the test-data folder from ISU box
 wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
 tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
 ```
 
-(1a) Condo HPC, using singularity
+If you are on a HPC (Nova/Condo/Ceres/Atlas), it is highly recommend to use the `submit_nf.slurm` script. The `# === Load Modules` section will need to be modified to get nextflow and singulariy running.
 
-  ```
-  module load gcc/7.3.0-xegsmw4 nextflow
-  module load singularity
-  nextflow run main_temp.nf -profile slurm,singularity -resume
-  ```
-  
-(1b) Atlas HPC, using singularity
+<details><summary>See Module Changes</summary>
 
-  ```
-  module load singularity
-  NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
-  ${NEXTFOW} run main_temp.nf -profile atlas,singularity -resume
-  ```
+```
+# === Nova
+module load gcc/7.3.0-xegsmw4 nextflow
+module load singularity
+NEXTFLOW=nextflow
+
+# === Condo
+module load gcc/7.3.0-xegsmw4 nextflow
+module load singularity
+NEXTFLOW=nextflow
+
+# === Ceres
+module load nextflow
+module load singularity
+NEXTFLOW=nextflow
+
+# === Atlas
+module load singularity
+NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+```
+
+</details>
+
   
  Example run on Atlas with 27 Illumina paired-end reads (listed in `my_group.txt`) against genome (`ref/b73_chr1_150000001-151000000.fasta`).
  
   ```
-  nextflow run HuffordLab/Maize_WGS_Build -r dev_jennifer \
+  nextflow run HuffordLab/Maize_WGS_Build \
     -profile atlas,singularity \
     --reads_file my_group.txt \
     --genome test-data/ref/b73_chr1_150000001-151000000.fasta

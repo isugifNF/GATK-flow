@@ -17,9 +17,10 @@ start=`date +%s`
 
 # === Load Modules here
 # module load nextflow                         # If on Ceres HPC
-# module load gcc/7.3.0-xegsmw4 nextflow       # If on Condo HPC, don't know why this seems more complicated
+module load gcc/7.3.0-xegsmw4 nextflow         # If on Nova/Condo HPC
 module load singularity
-NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+NEXTFLOW=NextFlow
+# NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow  # If on Atlas HPC
 # === Set working directory and in/out variables
 cd ${SLURM_SUBMIT_DIR}
 
@@ -28,10 +29,24 @@ cd ${SLURM_SUBMIT_DIR}
 # module list >> LOGGER.txt
 # ls -ltr ${INPUT}    # <= list any input files here
 # === Main Program
-${NEXTFLOW} run main.nf -profile slurm,singularity -resume
+#${NEXTFLOW} run main.nf -profile slurm,singularity -resume
+
+# Method 1: Use --reads
+${NEXTFLOW} run main.nf \
+  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+  --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
+  -profile slurm,singularity \
+  -resume
+
+# Method 2: Use --reads_file
+# ${NEXTFLOW} run main.nf \
+#   --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+#  --reads_file read-path.txt \
+#  -profile slurm,singularity \
+#  -resume
 
 end=`date +%s`
 
-# === Log msgs and resource use                          
+# === Log msgs and resource use
 scontrol show job ${SLURM_JOB_ID}
 echo "ran submit_nf.slurm: " `date` "; Execution time: " $((${end}-${start})) " seconds" >> LOGGER.txt

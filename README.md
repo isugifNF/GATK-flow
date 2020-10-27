@@ -1,6 +1,5 @@
 # Maize WGS Build
 
-<hr/>
 
 A [Nextflow](https://www.nextflow.io/) wrapper for the [Genome Analysis Toolkit (GATK)](https://gatk.broadinstitute.org/hc/en-us), modified from the pipeline described in the Bioinformatic Workbook: [GATK Best Practices Workflow for DNA-Seq](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0).
 
@@ -22,9 +21,9 @@ For portability, the dependencies for the GATK pipeline are provided as a singul
   * Illumina Paired End reads (`reads_R1.fastq`, `reads_R2.fastq.gz`)
 -->
 
-### Installation
+## Installation
 
-You will need a working version of nextflow, [see here](https://www.nextflow.io/docs/latest/getstarted.html#requirements) on how to install nextflow. Nextflow modules are avialble on some of the HPC computing resources.
+You will need a working version of nextflow, [see here](https://www.nextflow.io/docs/latest/getstarted.html#requirements) on how to install nextflow. Nextflow modules are avialable on some of the HPC computing resources.
 
 <details><summary>See modules on HPC clusters</summary>
 
@@ -96,7 +95,7 @@ Usage:
 
 </details>
 
-### Test Dataset
+## Test Dataset
 
 A simple test dataset (`test-data`) is available on [ISU Box](https://iastate.app.box.com/v/gatk-test-data). This dataset contains a small genome (portion of chr1, B73v5 ), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
 Only the reads that map to the region of the v5 genome is included, so that this can be tested quickly.
@@ -107,6 +106,11 @@ The end VCF file should have exactly 27 individuals (lines) in them.
 ```
 wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
 tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+
+ls -1 test-data/
+#> fastq          # <= folder of paired reads
+#> read-group.txt
+#> ref            # <= folder containing one genome reference
 ```
 
 <!-- ### Container
@@ -131,7 +135,7 @@ singularity exec gatk.sif vcftools
 ```
 --> 
 
-### Running the Pipeline
+## Running the Pipeline
 
 <!--
 >
@@ -161,6 +165,26 @@ wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
 tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
 ```
 
+The general format of a run with the pipeline is to provide a genome file (`--genome`) and Illumina Paired-End Reads files (`--reads` or `--reads_file`).
+
+```
+nextflow run main.nf \
+  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+  --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
+  -profile slurm,singularity \
+  -resume
+```
+
+or 
+
+```
+nextflow run main.nf \
+  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+  --reads_file read-path.txt \
+  -profile slurm,singularity \
+  -resume
+```
+
 If you are on a HPC (Nova/Condo/Ceres/Atlas), it is highly recommend to use the `submit_nf.slurm` script. The `# === Load Modules` section will need to be modified to get nextflow and singulariy running.
 
 <details><summary>See Module Changes</summary>
@@ -188,7 +212,37 @@ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 
 </details>
 
+
+### Using the --reads_file
+
+Instead of using a pattern to specify paired reads (`"test-data/fastq/*_{R1,R2}.fastq.gz"`), we can use a tab-delimited textfile to specify the path to left and right files. The textfile should contain three columns: readname, left read path, right read path.
+
+In our case, for the `test-data` run the following one-liner to generate a `read-path.txt`.
+
+```
+for f in test-data/fastq/*_R1.fastq.gz; do echo -e "$(basename $f |cut -f 1 -d "_")\t$(realpath $f)\t$(realpath $f | sed 's/_R1.fastq.gz/_R2.fastq.gz/g')"; done > read-path.txt
+```
+
+<details><summary>See example <b>read-path.txt</b></summary>
+
+```
+BioSample01	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample01_R1.fastq.gz	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample01_R2.fastq.gz
+BioSample02	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample02_R1.fastq.gz	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample02_R2.fastq.gz
+BioSample03	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample03_R1.fastq.gz	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample03_R2.fastq.gz
+BioSample04	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample04_R1.fastq.gz	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample04_R2.fastq.gz
+BioSample05	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample05_R1.fastq.gz	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample05_R2.fastq.gz
+```
+
+</details>
+
+### Final Output
+
+The Final output will be in a `results` folder. SNPs will be in the VCF file, probably the file with the longest name (e.g. `first-round_merged_snps-only_snp-only.pass-only.vcf`).
+
+## Example Runs
   
+<details><summary>See example run on <b>Atlas HPC</b></summary>
+
  Example run on Atlas with 27 Illumina paired-end reads (listed in `my_group.txt`) against genome (`ref/b73_chr1_150000001-151000000.fasta`).
  
   ```
@@ -223,6 +277,10 @@ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
   CPU hours   : 6.1
   Succeeded   : 156
   ```
+  
+</details>
+
+<details><summary>See example run on <b>MacOS</b> laptop where dependencies are locally installed</summary>
 
 (2) On MacOS laptop where dependencies are locally installed:
 
@@ -252,6 +310,8 @@ Launching `main_temp.nf` [amazing_rubens] - revision: 66f7e69455
 
 /Users/jenchang/Desktop/new/Maize_WGS_Build/work/88/bcb45710b109051ac54bbb0b2fb682/first-round_merged_snps-only_snp-only.pass-only.vcf
 ```
+
+</details>
 
 <details><summary>See generated <b>results</b> folder</summary>
 

@@ -97,7 +97,7 @@ Usage:
 
 ### Singularity Container
 
-Tools required for the workflow are included in the container [aseetharam/gatk:latest](https://github.com/aseetharam/gatk).
+Tools required for the workflow are included in the container [aseetharam/gatk:latest](https://github.com/aseetharam/gatk) and should be automatically pulled by nextflow. (Will only need to run `singularity pull` if website connection is unstable.)
 
 <details><summary>More Info</summary>
 

@@ -40,7 +40,7 @@ NEXTFLOW=nextflow
 
 # === Ceres
 module load nextflow
-module load singularity
+# singularity already available, no need for module
 NEXTFLOW=nextflow
 
 # === Atlas
@@ -208,7 +208,7 @@ NEXTFLOW=nextflow
 
 # === Ceres
 module load nextflow
-module load singularity
+# singularity already available, no need for module
 NEXTFLOW=nextflow
 
 # === Atlas

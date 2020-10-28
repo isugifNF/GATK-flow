@@ -437,22 +437,6 @@ Launching `main.nf` [amazing_rubens] - revision: 66f7e69455
 
 </details>
 
-<details><summary>See generated <b>results</b> folder</summary>
-
-```
-ls -l results/
-#> total 5736
-#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 bedtools
-#> drwxr-xr-x  8 jenchang  staff   256B Sep 10 18:36 bwa
-#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 createSeqDict
-#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 faidx
-#> -rw-r--r--  1 jenchang  staff   2.8M Sep 10 18:36 report.html
-#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 seqLength
-#> drwxr-xr-x  3 jenchang  staff    96B Sep 10 18:36 sortSeq
-#> -rw-r--r--  1 jenchang  staff   6.4K Sep 10 18:36 timeline.html
-```
-
-</details>
 
 <!--
 

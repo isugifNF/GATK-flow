@@ -498,9 +498,9 @@ workflow {
     if ("$workflow.profile"=~/testdata/) {
       get_test_data()
     } else {
-    genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
+      genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
     if (params.reads) {
-      reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true).take(3)| prep_reads //| view
+      reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true) | prep_reads //| view
     } else {
       reads_ch = channel.fromPath(params.reads_file, checkIfExists:true).splitCsv(sep:'\t') |
          map { n -> [ n.get(0), [ n.get(1), n.get(2) ]] } | prep_reads

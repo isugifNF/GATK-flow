@@ -19,7 +19,7 @@ start=`date +%s`
 # module load nextflow                         # If on Ceres HPC
 module load gcc/7.3.0-xegsmw4 nextflow         # If on Nova/Condo HPC
 module load singularity
-NEXTFLOW=NextFlow
+NEXTFLOW=nextflow
 # NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow  # If on Atlas HPC
 # === Set working directory and in/out variables
 cd ${SLURM_SUBMIT_DIR}

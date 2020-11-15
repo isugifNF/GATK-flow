@@ -8,7 +8,7 @@
 # --mail-user=username@email.com
 # --mail-type=begin
 # --mail-type=end
-# --account=isu_gif_vrsc
+# --account=isu_gif_vrsc    # <= put HPC account name here, required on Atlas and Ceres
 
 set -e
 set -u

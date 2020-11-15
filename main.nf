@@ -31,7 +31,9 @@ def helpMsg() {
    Optional other arguments:
     --window                Window size passed to bedtools for gatk [default:100000]
     --queueSize             Maximum jobs to submit to slurm [default:18]
+    --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
+    
 """
 }
 

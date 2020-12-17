@@ -283,8 +283,6 @@ process run_MergeBamAlignment {
   """
 }
 
-params.window=100000
-
 process fai_bedtools_makewindows {
   tag "$fai"
   label 'bedtools'

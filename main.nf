@@ -451,7 +451,7 @@ process keep_only_pass {
 workflow prep_genome {
   take: reference_fasta
   main:
-    fasta_sort(reference_fasta) | (fasta_bwa_index & fasta_samtools_faidx & fasta_picard_dict )
+    reference_fasta | (fasta_bwa_index & fasta_samtools_faidx & fasta_picard_dict )
 
     genome_ch = fasta_bwa_index.out
       .combine(fasta_samtools_faidx.out)

@@ -123,18 +123,18 @@ process paired_FastqToSAM {
   label 'picard'
   publishDir "${params.outdir}/picard"
 
-  input:
-  tuple val(readname), path(readpairs)
+  input:  // [readgroup, [left.fq.gz, right.fq.gz], increment_readgroup]
+  tuple val(readname), path(readpairs), val(i_readname)
 
-  output:
-  path "${readname}.bam"
+  output: // increment_readgroup.bam since one readgroup can have multiple lanes
+  path "${i_readname}.bam"
 
   """
   #! /usr/bin/env bash
   $picard_app FastqToSam \
     FASTQ=${readpairs.get(0)} \
     FASTQ2=${readpairs.get(1)} \
-    OUTPUT=${readname}.bam \
+    OUTPUT=${i_readname}.bam \
     READ_GROUP_NAME=${readname} \
     SAMPLE_NAME=${readname}_name \
     LIBRARY_NAME=${readname}_lib \
@@ -426,9 +426,13 @@ workflow prep_genome {
 }
 
 workflow prep_reads {
-  take: reads_fastas
+  take: reads_fastas // [readgroup, [left.fq.gz, right.fq.gz]]
   main:
-    reads_fastas | paired_FastqToSAM | BAM_MarkIlluminaAdapters //| BAM_SamToFastq
+    i = 1   // incrementing number, will also match line number of reads_file
+    reads_fastas |
+      map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] } |
+      paired_FastqToSAM |
+      BAM_MarkIlluminaAdapters
 
     reads_ch = BAM_MarkIlluminaAdapters.out
 
@@ -459,14 +463,21 @@ workflow map_reads {
 
 workflow {
   main:
-      genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
-    if (params.reads) {
-      reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true) | prep_reads //| view
-    } else {
-      reads_ch = channel.fromPath(params.reads_file, checkIfExists:true).splitCsv(sep:'\t') |
-         map { n -> [ n.get(0), [ n.get(1), n.get(2) ]] } | prep_reads
-    }
+    // Reference genome
+    genome_ch = channel.fromPath(params.genome, checkIfExists:true) |
+      prep_genome // | view
 
+    // Paired end illumina reads
+    if (params.reads) {
+      rfile_ch = channel.fromFilePairs(params.reads, checkIfExists:true) // | view
+    } else {
+      rfile_ch = channel.fromPath(params.reads_file, checkIfExists:true) |
+        splitCsv(sep:'\t') |
+        map { n -> [ n.get(0), [n.get(1), n.get(2)]] } // | view
+    }
+    reads_ch = rfile_ch | prep_reads
+
+    // Map reads to genome
     map_reads(reads_ch, genome_ch) | run_MergeBamAlignment
 
     bam_ch = run_MergeBamAlignment.out.bam.toList() | map { it -> [it]} //| view

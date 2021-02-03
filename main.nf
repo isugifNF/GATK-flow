@@ -63,42 +63,6 @@ if(!params.reads & !params.reads_file){
   exit 0
 }
 
-process get_test_data {
-  publishDir './', mode: 'move'
-
-  output:
-  path "*"
-
-  script:
-  """
-  #! /usr/bin/env bash
-  wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-  tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-  """
-}
-
-process fasta_sort {
-  tag "$fasta"
-  publishDir "$params.outdir/sort_fasta"
-
-
-  input:
-  path fasta
-
-  output:
-  path "${fasta.simpleName}_sorted.fasta"
-
-  script:
-  """
-  #! /usr/bin/env bash
-  cat $fasta |\
-    tr '\n' '\t' | sed \$'s/>/\r>/g'| tr '\r' '\n'|\
-    sort |\
-    tr '\t' '\n' | sed \$'s/\r//g' |\
-    grep -v "^\$" > ${fasta.simpleName}_sorted.fasta
-  """
-}
-
 process fasta_bwa_index {
   tag "$fasta"
   label 'bwa'
@@ -495,9 +459,6 @@ workflow map_reads {
 
 workflow {
   main:
-    if ("$workflow.profile"=~/testdata/) {
-      get_test_data()
-    } else {
       genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
     if (params.reads) {
       reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true) | prep_reads //| view
@@ -535,6 +496,5 @@ workflow {
       gatk_VariantFiltration |
       keep_only_pass |
       view
-    }
 
 }

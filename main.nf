@@ -33,7 +33,7 @@ def helpMsg() {
     --queueSize             Maximum jobs to submit to slurm [default:18]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
-    
+
 """
 }
 
@@ -63,48 +63,12 @@ if(!params.reads & !params.reads_file){
   exit 0
 }
 
-process get_test_data {
-  publishDir './', mode: 'move'
-
-  output:
-  path "*"
-
-  script:
-  """
-  #! /usr/bin/env bash
-  wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-  tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-  """
-}
-
-process fasta_sort {
-  tag "$fasta"
-  publishDir "$params.outdir/sort_fasta"
-
-
-  input:
-  path fasta
-
-  output:
-  path "${fasta.simpleName}_sorted.fasta"
-
-  script:
-  """
-  #! /usr/bin/env bash
-  cat $fasta |\
-    tr '\n' '\t' | sed \$'s/>/\r>/g'| tr '\r' '\n'|\
-    sort |\
-    tr '\t' '\n' | sed \$'s/\r//g' |\
-    grep -v "^\$" > ${fasta.simpleName}_sorted.fasta
-  """
-}
-
 process fasta_bwa_index {
   tag "$fasta"
   label 'bwa'
   publishDir "${params.outdir}/bwa"
 
-  input:
+  input:  // genome.fasta
   path fasta
 
   output: // [genome.fasta, [genome_index files]]
@@ -122,10 +86,10 @@ process fasta_samtools_faidx {
   label 'samtools'
   publishDir "${params.outdir}/samtools"
 
-  input:
+  input:  // genome.fasta
   path fasta
 
-  output:
+  output: // genome.fai
   path "${fasta}.fai"
 
   """
@@ -139,10 +103,10 @@ process fasta_picard_dict {
   label 'picard'
   publishDir "${params.outdir}/picard"
 
-  input:
+  input:  // genome.fasta
   path fasta
 
-  output:
+  output: // genome.dict
   path "${fasta.simpleName}.dict"
 
   script:
@@ -159,18 +123,18 @@ process paired_FastqToSAM {
   label 'picard'
   publishDir "${params.outdir}/picard"
 
-  input:
-  tuple val(readname), path(readpairs)
+  input:  // [readgroup, [left.fq.gz, right.fq.gz], increment_readgroup]
+  tuple val(readname), path(readpairs), val(i_readname)
 
-  output:
-  path "${readname}.bam"
+  output: // increment_readgroup.bam since one readgroup can have multiple lanes
+  path "${i_readname}.bam"
 
   """
   #! /usr/bin/env bash
   $picard_app FastqToSam \
     FASTQ=${readpairs.get(0)} \
     FASTQ2=${readpairs.get(1)} \
-    OUTPUT=${readname}.bam \
+    OUTPUT=${i_readname}.bam \
     READ_GROUP_NAME=${readname} \
     SAMPLE_NAME=${readname}_name \
     LIBRARY_NAME=${readname}_lib \
@@ -185,10 +149,10 @@ process BAM_MarkIlluminaAdapters {
   label 'picard'
   publishDir "${params.outdir}/picard"
 
-  input:
+  input:  // reads.bam
   path bam
 
-  output:
+  output: // reads_marked.bam
   path "${bam.simpleName}_marked.bam"  //, emit: bam
   //path "${bam.simpleName}_marked*.txt"
 
@@ -208,10 +172,10 @@ process BAM_SamToFastq {
   label 'picard'
   publishDir "${params.outdir}/picard"
 
-  input:
+  input:  // reads.bam
   path bam
 
-  output:
+  output: // reads_interleaved.fq
   path "${bam.simpleName}_interleaved.fq"
 
   script:
@@ -233,10 +197,10 @@ process run_bwa_mem {
   label 'bwa_mem'
   publishDir "${params.outdir}/bwa_mem"
 
-  input:
+  input:  // [reads.fq, genome.fasta, genome index files ...]
   tuple path(readsfq), path(genome_fasta), path(genome_index)
 
-  output:
+  output: // reads_mapped_2_genome.bam
   path "${readsfq.simpleName}_mapped.bam"
 
   script:
@@ -256,10 +220,10 @@ process run_MergeBamAlignment {
   label 'picard'
   publishDir "${params.outdir}/picard"
 
-  input:
+  input:  // [readgroup, unmapped reads, mapped reads]
   tuple val(readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
 
-  output:
+  output: // merged bam and bai files
   path "${readname}_merged.bam", emit:'bam'
   path "${readname}_merged.bai", emit:'bai'
 
@@ -288,10 +252,10 @@ process fai_bedtools_makewindows {
   label 'bedtools'
   publishDir "${params.outdir}/bedtools"
 
-  input:
+  input:  // genome.fai
   path fai
 
-  output:
+  output: // genome_coords.bed
   path "${fai.simpleName}_coords.bed"
 
   script:
@@ -310,10 +274,10 @@ process run_gatk_snp {
   label 'gatk'
   publishDir "${params.outdir}/gatk"
 
-  input:
+  input:  // [window, reads files ..., genome files ...]
   tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
 
-  output:
+  output: // identified SNPs as a vcf file
   path "*.vcf", emit: 'vcf'
   path "*.vcf.idx", emit: 'idx'
 
@@ -328,10 +292,10 @@ process run_gatk_snp {
 process merge_vcf {
   publishDir "${params.outdir}/vcftools"
 
-  input:
+  input:  // multiple SNP vcf files
   path(vcfs)
 
-  output:
+  output: // merged into one vcf file
   path "first-round_merged.vcf"
 
   script:
@@ -347,10 +311,10 @@ process vcftools_snp_only {
   label 'vcftools'
   publishDir "${params.outdir}/vcftools"
 
-  input:
+  input:  // merged SNP vcf file
   path merged_vcf
 
-  output:
+  output: // vcf file only containing SNPs
   path "${merged_vcf.simpleName}_snps-only.*"
 
   script:
@@ -370,10 +334,10 @@ process run_SortVCF {
   label 'picard'
   publishDir "$params.outdir/picard"
 
-  input:
+  input:  // [SNP.vcf, genome.dict]
   tuple path(vcf), path(dict)
 
-  output:
+  output: // sorted SNP.vcf
   tuple path ("*.vcf"), path("*.vcf.*")
 
   script:
@@ -392,10 +356,10 @@ process calc_DPvalue {
   tag "$sorted_vcf.fileName"
   label 'datamash'
 
-  input:
+  input:  // sorted SNP vcf
   path(sorted_vcf)
 
-  output:
+  output: // DP value (number) to filter vcf in downstream process
   stdout()
 
   script:
@@ -410,10 +374,10 @@ process calc_DPvalue {
 process gatk_VariantFiltration {
   tag "$sorted_snp_vcf.fileName"
 
-  input:
+  input:  // [sorted snp vcf, DP filter, genome files ... ]
   tuple path(sorted_snp_vcf), val(dp), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
 
-  output:
+  output: // filtered to identified SNP variants
   path("${sorted_snp_vcf.simpleName}.marked.vcf")
 
   script:
@@ -462,9 +426,13 @@ workflow prep_genome {
 }
 
 workflow prep_reads {
-  take: reads_fastas
+  take: reads_fastas // [readgroup, [left.fq.gz, right.fq.gz]]
   main:
-    reads_fastas | paired_FastqToSAM | BAM_MarkIlluminaAdapters //| BAM_SamToFastq
+    i = 1   // incrementing number, will also match line number of reads_file
+    reads_fastas |
+      map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] } |
+      paired_FastqToSAM |
+      BAM_MarkIlluminaAdapters
 
     reads_ch = BAM_MarkIlluminaAdapters.out
 
@@ -495,17 +463,21 @@ workflow map_reads {
 
 workflow {
   main:
-    if ("$workflow.profile"=~/testdata/) {
-      get_test_data()
-    } else {
-      genome_ch = channel.fromPath(params.genome, checkIfExists:true) | prep_genome // | view
-    if (params.reads) {
-      reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true) | prep_reads //| view
-    } else {
-      reads_ch = channel.fromPath(params.reads_file, checkIfExists:true).splitCsv(sep:'\t') |
-         map { n -> [ n.get(0), [ n.get(1), n.get(2) ]] } | prep_reads
-    }
+    // Reference genome
+    genome_ch = channel.fromPath(params.genome, checkIfExists:true) |
+      prep_genome // | view
 
+    // Paired end illumina reads
+    if (params.reads) {
+      rfile_ch = channel.fromFilePairs(params.reads, checkIfExists:true) // | view
+    } else {
+      rfile_ch = channel.fromPath(params.reads_file, checkIfExists:true) |
+        splitCsv(sep:'\t') |
+        map { n -> [ n.get(0), [n.get(1), n.get(2)]] } // | view
+    }
+    reads_ch = rfile_ch | prep_reads
+
+    // Map reads to genome
     map_reads(reads_ch, genome_ch) | run_MergeBamAlignment
 
     bam_ch = run_MergeBamAlignment.out.bam.toList() | map { it -> [it]} //| view
@@ -535,6 +507,5 @@ workflow {
       gatk_VariantFiltration |
       keep_only_pass |
       view
-    }
 
 }

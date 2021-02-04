@@ -291,90 +291,90 @@ lrwxrwxrwx 1 user proj  144 Oct 13 00:02 first-round_merged_snps-only_snp-only.p
 
 Some example runs provided to show nextflow output. These were run using the earlier forked version `HuffordLab/Maize_WGS_Build`
 
-<details><summary>See example run on <b>Ceres HPC</b></summary>
 
-Runtime: 1 hour 7 minutes and 17 seconds.
+<details><summary>See example run on <b>Ceres HPC</b> - last update: 3 Feb 2021</summary>
+
+Runtime: 1 hour 8 minutes and 53 seconds.
 
 ```
 $ nextflow run main.nf \
   --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
+  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
   -profile slurm,singularity \
   -resume
 
 N E X T F L O W  ~  version 20.07.1
-Launching `main.nf` [extravagant_sinoussi] - revision: d5f8cdb041
-WARN: It appears you have never run this project before -- Option `-resume` is ignored
-executor >  slurm (156)
-[58/16126c] process > prep_genome:fasta_sort (b73... [100%] 1 of 1 ✔
-[a8/a73011] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
-[43/406cf5] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
-[27/647551] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
-[05/dc6a6a] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
-[18/c53c3d] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
-[9d/f099dd] process > map_reads:BAM_SamToFastq (B... [100%] 27 of 27 ✔
-[5a/95f9dd] process > map_reads:run_bwa_mem (BioS... [100%] 27 of 27 ✔
-[6a/56f359] process > run_MergeBamAlignment (BioS... [100%] 27 of 27 ✔
-[24/9d4e1d] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
-[f5/3a7b48] process > run_gatk_snp (chr1:900001-9... [100%] 10 of 10 ✔
-[f8/9dd8e8] process > merge_vcf                      [100%] 1 of 1 ✔
-[40/0b74b8] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
-[a6/9c6152] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
-[af/2f9784] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
-[bf/c7d576] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
-[51/d58598] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
+Launching `main.nf` [pedantic_rubens] - revision: a747ccd51b
+executor >  slurm (155)
+[d9/564d1a] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
+[80/f79377] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
+[1e/42e9b5] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
+[e3/0cfc12] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
+[f7/6954fd] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
+[4a/e76481] process > map_reads:BAM_SamToFastq (2... [100%] 27 of 27 ✔
+[c0/c46dc2] process > map_reads:run_bwa_mem (20_B... [100%] 27 of 27 ✔
+[a3/34dabf] process > run_MergeBamAlignment (20_B... [100%] 27 of 27 ✔
+[72/48d546] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
+[4d/f3e393] process > run_gatk_snp (chr1:700001-8... [100%] 10 of 10 ✔
+[c6/a4e3c7] process > merge_vcf                      [100%] 1 of 1 ✔
+[a8/111516] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
+[59/9b2691] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
+[03/8b7fa4] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
+[19/447f44] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
+[8d/5cd96b] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
 2265.1
 
-/lustre/project/isu_gif_vrsc/jenchang/_wrkspc/2020-11-15_NF_account/Maize_WGS_Build/work/51/d585988b0193a9cf0aceb653e468de/first-round_merged_snps-only_snp-only.pass-only.vcf
-Completed at: 15-Nov-2020 15:24:53
-Duration    : 1h 7m 17s
-CPU hours   : 7.6
-Succeeded   : 156
-
+/lustre/project/isu_gif_vrsc/jenchang/_wrkspc/2021-02-03_gatk/GATK/work/8d/5cd96bb7e928bcab97d655bfd7fb51/first-round_merged_snps-only_snp-only.pass-only.vcf
+Completed at: 03-Feb-2021 16:34:36
+Duration    : 1h 8m 53s
+CPU hours   : 7.7
+Succeeded   : 155
 ```
 
 </details>
 
-<details><summary>See example run on <b>Atlas HPC</b></summary>
+<details><summary>See example run on <b>Atlas HPC</b> - last update: 3 Feb 2021</summary>
 
 Example run on Atlas with 27 Illumina paired-end reads (listed in `my_group.txt`) against genome (`ref/b73_chr1_150000001-151000000.fasta`).
 
-Runtime: 50 minutes and 7 seconds.
+Runtime: 50 minutes and 14 seconds.
  
 ```
 $ nextflow run main.nf \
   --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
-  -profile atlas,singularity \
+  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
+  -profile slurm,singularity \
+  --account isu_gif_vrsc \
   -resume
-  
+
 N E X T F L O W  ~  version 20.07.1
-Launching `main.nf` [awesome_poincare] - revision: d5f8cdb041 
-executor >  slurm (156)
-[b6/77467c] process > prep_genome:fasta_sort (b73... [100%] 1 of 1 ✔
-[39/4f61d2] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
-[40/c4d2df] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
-[d3/2c6941] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
-[f4/25d924] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
-[b2/693604] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
-[a8/242f07] process > map_reads:BAM_SamToFastq (B... [100%] 27 of 27 ✔
-[95/afae47] process > map_reads:run_bwa_mem (BioS... [100%] 27 of 27 ✔
-[f6/4425e9] process > run_MergeBamAlignment (BioS... [100%] 27 of 27 ✔
-[73/eebdca] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
-[fe/b96a27] process > run_gatk_snp (chr1:900001-9... [100%] 10 of 10 ✔
-[8b/64c2b5] process > merge_vcf                      [100%] 1 of 1 ✔
-[48/ab3ec5] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
-[0d/2851e0] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
-[d9/6eff09] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
-[ec/254329] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
-[20/b0b7ae] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
+Launching `main.nf` [big_booth] - revision: a747ccd51b
+executor >  slurm (155)
+[2e/665f72] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
+[45/7458ae] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
+[a2/a9c461] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
+[6f/ec7470] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
+[18/4f4053] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
+[c6/0ffbce] process > map_reads:BAM_SamToFastq (2... [100%] 27 of 27 ✔
+[0f/e7b1e8] process > map_reads:run_bwa_mem (20_B... [100%] 27 of 27 ✔
+[1b/239d26] process > run_MergeBamAlignment (20_B... [100%] 27 of 27 ✔
+[0c/8adc53] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
+[2e/e64a00] process > run_gatk_snp (chr1:900001-9... [100%] 10 of 10 ✔
+[3e/83e2f3] process > merge_vcf                      [100%] 1 of 1 ✔
+[a0/5f6f83] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
+[69/f74162] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
+[32/e7e338] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
+[e8/116f44] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
+[4b/903e15] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
 2265.1
 
-/project/isu_gif_vrsc/Jennifer/github/Maize_WGS_Build/work/20/b0b7ae92102279447059de61707faa/first-round_merged_snps-only_snp-only.pass-only.vcf
-Completed at: 28-Oct-2020 13:34:41
-Duration    : 50m 7s
+/project/isu_gif_vrsc/Jennifer/_wrkspc/Maize_WGS_Build/work/4b/903e15844eea88011cddde770c6569/first-round_merged_snps-only_snp-only.pass-only.vcf
+Completed at: 03-Feb-2021 17:51:00
+Duration    : 50m 14s
 CPU hours   : 6.2
-Succeeded   : 156   
+Succeeded   : 155  
 ```
   
 </details>

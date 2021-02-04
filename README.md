@@ -1,4 +1,4 @@
-# Maize WGS Build
+# GATK
 
 
 A [Nextflow](https://www.nextflow.io/) wrapper for the [Genome Analysis Toolkit (GATK)](https://gatk.broadinstitute.org/hc/en-us), modified from the pipeline described in the Bioinformatic Workbook: [GATK Best Practices Workflow for DNA-Seq](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0).
@@ -50,10 +50,18 @@ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 
 </details>
 
-
+<!--
 ```
 git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd Maize_WGS_Build
+
+nextflow run main.nf --help
+```
+-->
+
+```
+git clone https://github.com/isugfNF/GATK.git
+cd GATK
 
 nextflow run main.nf --help
 ```
@@ -162,10 +170,22 @@ ls -1 test-data/
 
 Fetch the pipeline and fetch the test-data folder.
 
+<!--
 ```
 # Fetch repo
 git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd Maize_WGS_Build
+
+# Fetch the test-data folder from ISU box
+wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
+```
+-->
+
+```
+# Fetch repo
+git clone https://github.com/isugifNF/GATK.git
+cd GATK
 
 # Fetch the test-data folder from ISU box
 wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
@@ -269,7 +289,8 @@ lrwxrwxrwx 1 user proj  144 Oct 13 00:02 first-round_merged_snps-only_snp-only.p
 
 ## Example Runs
 
-Some example runs provided to show nextflow output. May need to be rerun now and again.
+Some example runs provided to show nextflow output. These were run using the earlier forked version `HuffordLab/Maize_WGS_Build`
+
 
 <details><summary>See example run on <b>Ceres HPC</b> - last update: 3 Feb 2021</summary>
 

@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=16
+#SBATCH --ntasks-per-node=4
 #SBATCH --time=24:00:00
-#SBATCH --job-name=NextFlow_GATK
+#SBATCH --job-name=NF_GATK
 #SBATCH --output=R-%x.%J.out
 #SBATCH --error=R-%x.%J.err
 # --mail-user=username@email.com
@@ -21,31 +21,28 @@ module load gcc/7.3.0-xegsmw4 nextflow         # If on Nova/Condo HPC
 module load singularity
 NEXTFLOW=nextflow
 # NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow  # If on Atlas HPC
+
 # === Set working directory and in/out variables
 cd ${SLURM_SUBMIT_DIR}
 
-# === Get input size and module versions
-# echo "started NextFlow.slurm: " `date` " seconds" >> LOGGER.txt
-# module list >> LOGGER.txt
-# ls -ltr ${INPUT}    # <= list any input files here
 # === Main Program
-#${NEXTFLOW} run main.nf -profile slurm,singularity -resume
 
 # Method 1: Use --reads
 ${NEXTFLOW} run main.nf \
-  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+  --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
-  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
   -profile slurm,singularity \
   -resume
+  #--picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
 
 # Method 2: Use --reads_file
 # ${NEXTFLOW} run main.nf \
 #   --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
 #  --reads_file read-path.txt \
-#  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
 #  -profile slurm,singularity \
 #  -resume
+
+#  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
 
 end=`date +%s`
 

@@ -276,7 +276,7 @@ process bedtools_makewindows {
 process gatk_HaplotypeCaller {
   tag "$window"
   label 'gatk'
-  publishDir "${params.outdir}/04_GATK"
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
 
   input:  // [window, reads files ..., genome files ...]
   tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
@@ -298,7 +298,7 @@ process gatk_HaplotypeCaller {
 // --java-options \"-Xmx80g -XX:+UseParallelGC\"
 
 process merge_vcf {
-  publishDir "${params.outdir}/04_GATK"
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
 
   input:  // multiple SNP vcf files
   path(vcfs)
@@ -317,7 +317,7 @@ process merge_vcf {
 process vcftools_snp_only {
   tag "${merged_vcf.fileName}"
   label 'vcftools'
-  publishDir "${params.outdir}/05_FilterSNPs"
+  publishDir "${params.outdir}/05_FilterSNPs", mode: 'copy'
 
   input:  // merged SNP vcf file
   path(merged_vcf)
@@ -340,7 +340,7 @@ process vcftools_snp_only {
 process SortVcf {
   tag "$vcf.fileName"
   label 'gatk'
-  publishDir "$params.outdir/05_FilterSNPs"
+  publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:  // [SNP.vcf, genome.dict]
   tuple path(vcf), path(dict)
@@ -381,10 +381,10 @@ process calc_DPvalue {
 
 process VariantFiltration {
   tag "$sorted_snp_vcf.fileName"
-  publishDir "$params.outdir/05_FilterSNPs"
+  publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:  // [sorted snp vcf, DP filter, genome files ... ]
-  tuple path(sorted_snp_vcf), val(dp), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
+  tuple path(sorted_snp_vcf), val(dp), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // filtered to identified SNP variants
   path("${sorted_snp_vcf.simpleName}.marked.vcf")
@@ -406,7 +406,7 @@ process VariantFiltration {
 
 process keep_only_pass {
   tag "${snp_marked_vcf.fileName}"
-  publishDir "$params.outdir/05_FilterSNPs"
+  publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:
   path(snp_marked_vcf)

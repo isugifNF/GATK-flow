@@ -17,19 +17,18 @@ set -u
 start=`date +%s`
 
 # === Load Modules here
-# ==  Atlas HPC
+# ==  Atlas HPC (will need a local install of nextflow)
 # module load singularity
 # NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 
 # == Ceres HPC
-module load nextflow
-NEXTFLOW=nextflow
+# module load nextflow
+# NEXTFLOW=nextflow
 
 # == Nova HPC
-#module load gcc/7.3.0-xegsmw4 nextflow         # If on Nova/Condo HPC
-#module load singularity
-#NEXTFLOW=nextflow
-# NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow  # If on Atlas HPC
+module load gcc/7.3.0-xegsmw4 nextflow
+module load singularity
+NEXTFLOW=nextflow
 
 # === Set working directory and in/out variables
 cd ${SLURM_SUBMIT_DIR}

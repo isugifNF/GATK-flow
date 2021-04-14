@@ -27,7 +27,6 @@ def helpMsg() {
     --bedtools_app          Link to bedtools executable [default: 'bedtools']
     --datamash_app          Link to datamash executable [default: 'datamash']
     --vcftools_app          Link to vcftools executable [default: 'vcftools']
-    --java_options          Java options for gatk [default: ' --java-options \"-Xmx80g -XX:+UseParallelGC\" ']
 
    Optional other arguments:
     --threads               Threads per process [default:4 for local, 16 for slurm]
@@ -88,8 +87,8 @@ process FastqToSam {
     --LIBRARY_NAME ${readname}_lib \
     --PLATFORM ILLUMINA \
     --SEQUENCING_CENTER ISU \
-    $java_options
-  sleep 5
+    --USE_JDK_DEFLATER true \
+    --USE_JDK_INFLATER true
   """
 }
 
@@ -111,7 +110,8 @@ process MarkIlluminaAdapters {
     --INPUT $bam \
     --OUTPUT ${bam.simpleName}_marked.bam \
     --METRICS ${bam.simpleName}_marked_metrics.txt \
-    $java_options
+    --USE_JDK_DEFLATER true \
+    --USE_JDK_INFLATER true
   """
 }
 
@@ -136,7 +136,8 @@ process SamToFastq {
     --CLIPPING_ATTRIBUTE XT \
     --CLIPPING_ACTION 2 \
     --INCLUDE_NON_PF_READS true \
-    $java_options
+    --USE_JDK_DEFLATER true \
+    --USE_JDK_INFLATER true
   """
 }
 // INTERLEAVE=true
@@ -208,7 +209,7 @@ process MergeBamAlignment {
   tuple val(i_readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_dict)
 
   output: // merged bam and bai files
-  tuple path("${readname}_merged.bam"), path("${readname}_merged.bai")
+  tuple path("${i_readname}_merged.bam"), path("${i_readname}_merged.bai")
 
   script:
   """
@@ -226,7 +227,8 @@ process MergeBamAlignment {
   --MAX_INSERTIONS_OR_DELETIONS -1 \
   --PRIMARY_ALIGNMENT_STRATEGY MostDistant \
   --ATTRIBUTES_TO_RETAIN XS \
-  $java_options
+  --USE_JDK_DEFLATER true \
+  --USE_JDK_INFLATER true
   """
 }
 
@@ -248,26 +250,27 @@ process samtools_faidx {
 }
 
 process bedtools_makewindows {
-  tag "$fai"
+  tag "${genome_fai.simpleName}"
   label 'bedtools'
   publishDir "${params.outdir}/03_PrepGATK"
 
   input:  // genome.fai
-  path(fai)
+  path(genome_fai)
 
   output: // genome_coords.bed
-  path("${fai.simpleName}_coords.bed")
+  path("*_coords.bed")
 
   script:
   """
   #! /usr/bin/env bash
-  awk -F'\t' '{print \$1"\t"\$2}' $fai > genome_length.txt
-  $bedtools_app makewindows -w $params.window -g genome_length.txt |\
+  cat ${genome_fai} | awk -F'\t' '{print \$1"\t"\$2}' > genome_length.txt
+  $bedtools_app makewindows -w "$params.window" -g genome_length.txt |\
     awk '{print \$1"\t"\$2+1"\t"\$3}' |\
     sed \$'s/\t/:/1' |\
-    sed \$'s/\t/-/g' > ${fai.simpleName}_coords.bed
+    sed \$'s/\t/-/g' > ${genome_fai.simpleName}_coords.bed
   """
 }
+//  ${fai.simpleName}_coords.bed
 
 
 process gatk_HaplotypeCaller {
@@ -285,12 +288,11 @@ process gatk_HaplotypeCaller {
   """
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
-  $gatk_app ${java_options} HaplotypeCaller \
+  $gatk_app --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller \
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
-    --output ${window.replace(':','_')}.vcf \
-    $java_options
+    --output ${window.replace(':','_')}.vcf
   """
 }
 // --java-options \"-Xmx80g -XX:+UseParallelGC\"
@@ -353,8 +355,7 @@ process SortVcf {
   --INPUT $vcf \
   --SEQUENCE_DICTIONARY $dict \
   --CREATE_INDEX true \
-  --OUTPUT ${vcf.simpleName}_sorted.vcf \
-  $java_options
+  --OUTPUT ${vcf.simpleName}_sorted.vcf
   """
 }
 // java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
@@ -397,8 +398,7 @@ process VariantFiltration {
     --variant $sorted_snp_vcf \
     --filter-expression \"QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || DP > $dp\" \
     --filter-name "FAIL" \
-    --output ${sorted_snp_vcf.simpleName}.marked.vcf \
-    $java_options
+    --output ${sorted_snp_vcf.simpleName}.marked.vcf
   """
 }
 
@@ -449,7 +449,7 @@ workflow {
   unmapped_ch = MarkIlluminaAdapters.out |
     map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
 
-  genome_ch | ( CreateSequenceDictionary & samtools_faidx )
+  genome_ch | (CreateSequenceDictionary & samtools_faidx )
   unmapped_ch | join(mapped_ch) | combine(genome_ch) | combine(CreateSequenceDictionary.out) | MergeBamAlignment
 
   allbai_ch = MergeBamAlignment.out | map { n -> n.get(1)} |
@@ -458,8 +458,7 @@ workflow {
     collect | map { n -> [n]} | combine(allbai_ch)
 
   // == Run Gatk Haplotype by interval window
-  genome_ch | bedtools_makewindows | splitText( by:1) |
-    map { n -> n.replaceFirst("\n","") } |
+  samtools_faidx.out | bedtools_makewindows | splitText(){it.trim()} |
     combine(allbambai_ch) |
     combine(genome_ch) |
     combine(CreateSequenceDictionary.out) |
@@ -480,4 +479,5 @@ workflow {
     combine(samtools_faidx.out) |
     VariantFiltration |
     keep_only_pass
+
 }

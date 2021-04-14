@@ -125,7 +125,7 @@ Fetch the pipeline and fetch the test-data folder.
 
 ```
 # Fetch repo
-git clone https://github.com/isugifNF/GATK.git
+git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd GATK
 
 # Fetch the test-data folder from ISU box
@@ -266,8 +266,6 @@ Succeeded   : 155
 
 <details><summary>See example run on <b>Atlas HPC</b> - last update: 14 April 2021</summary>
 
-Example run on Atlas with 27 Illumina paired-end reads (`test-data/fastq/*.fastq.gz`) against genome (`test-data/ref/b73_chr1_150000001-151000000.fasta`).
-
 Runtime: 50 minutes and 50 seconds.
  
 ```
@@ -308,43 +306,43 @@ Succeeded   : 155
   
 </details>
 
-<details><summary>See example run on <b>Condo HPC</b></summary>
+<details><summary>See example run on <b>Nova HPC</b> - last update: 14 April 2021</summary>
 
-Runtime: 2 hours 5 minutes and 39 seconds.
+Runtime: 1 hour 46 minutes and 17 seconds.
 
 ```
+$ module load gcc/7.3.0-xegsmw4 nextflow
+$ module load singularity
 $ nextflow run main.nf \
-  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+  --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
+  --queueSize 25 \
   -profile slurm,singularity \
   -resume
-  
+
 N E X T F L O W  ~  version 20.07.1
-Launching `main.nf` [clever_monod] - revision: d5f8cdb041
-WARN: It appears you have never run this project before -- Option `-resume` is ignored
-executor >  slurm (156)
-[69/9f3959] process > prep_genome:fasta_sort (b73... [100%] 1 of 1 ✔
-[f9/c3d116] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
-[b8/d79a0e] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
-[22/9ebdcb] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
-[a3/3b449a] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
-[6b/52d8e1] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
-[d4/bebcc3] process > map_reads:BAM_SamToFastq (B... [100%] 27 of 27 ✔
-[42/367b85] process > map_reads:run_bwa_mem (BioS... [100%] 27 of 27 ✔
-[ca/71fa06] process > run_MergeBamAlignment (BioS... [100%] 27 of 27 ✔
-[ea/a3adc0] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
-[f4/683387] process > run_gatk_snp (chr1:900001-9... [100%] 10 of 10 ✔
-[45/bc1e85] process > merge_vcf                      [100%] 1 of 1 ✔
-[f4/5e9035] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
-[2d/58f2c9] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
-[df/c75b2a] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
-[3c/9cec07] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
-[90/6b176a] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
-/work/GIF/jenchang/github/Maize_WGS_Build/work/90/6b176a1ae430c87dca4745359652e3/first-round_merged_snps-only_snp-only.pass-only.vcf
-Completed at: 28-Oct-2020 15:03:08
-Duration    : 2h 5m 39s
-CPU hours   : 10.1
-Succeeded   : 156
+Launching `main.nf` [condescending_monod] - revision: ca139b5b5f
+executor >  slurm (155)
+[5c/b08536] process > FastqToSam (BioSample04)       [100%] 27 of 27 ✔
+[88/46d321] process > MarkIlluminaAdapters (27_Bi... [100%] 27 of 27 ✔
+[96/200ac5] process > SamToFastq (21_BioSample24_... [100%] 27 of 27 ✔
+[4c/8735b5] process > bwamem2_index (b73_chr1_150... [100%] 1 of 1 ✔
+[86/06740e] process > bwamem2_mem (21_BioSample24)   [100%] 27 of 27 ✔
+[c0/3e6521] process > CreateSequenceDictionary (b... [100%] 1 of 1 ✔
+[e2/856737] process > samtools_faidx (b73_chr1_15... [100%] 1 of 1 ✔
+[25/529408] process > MergeBamAlignment (21_BioSa... [100%] 27 of 27 ✔
+[40/ca5ca7] process > bedtools_makewindows (b73_c... [100%] 1 of 1 ✔
+[8a/0d6f00] process > gatk_HaplotypeCaller (chr1:... [100%] 10 of 10 ✔
+[96/0b957b] process > merge_vcf                      [100%] 1 of 1 ✔
+[96/1f9848] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
+[60/edb33d] process > SortVcf (first-round_merged... [100%] 1 of 1 ✔
+[b0/372a4e] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
+[f3/cfb966] process > VariantFiltration (first-ro... [100%] 1 of 1 ✔
+[86/024c8b] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
+Completed at: 14-Apr-2021 02:17:48
+Duration    : 1h 46m 17s
+CPU hours   : 6.6
+Succeeded   : 155
 ```
 
 </details>

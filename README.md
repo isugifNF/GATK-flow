@@ -33,8 +33,8 @@ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 </details>
 
 ```
-git clone https://github.com/isugfNF/GATK.git
-cd GATK
+git clone https://github.com/HuffordLab/Maize_WGS_Build.git
+cd Maize_WGS_Build
 
 nextflow run main.nf --help
 ```
@@ -126,7 +126,7 @@ Fetch the pipeline and fetch the test-data folder.
 ```
 # Fetch repo
 git clone https://github.com/HuffordLab/Maize_WGS_Build.git
-cd GATK
+cd Maize_WGS_Build
 
 # Fetch the test-data folder from ISU box
 wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz

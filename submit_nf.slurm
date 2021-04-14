@@ -5,11 +5,10 @@
 #SBATCH --job-name=NF_GATK
 #SBATCH --output=R-%x.%J.out
 #SBATCH --error=R-%x.%J.err
-#SBATCH --mail-user=jenchang@iastate.edu
-#SBATCH --mail-type=begin
-#SBATCH --mail-type=end
-# --account=isu_gif_vrsc
-# <= put HPC account name here, required on Atlas and Ceres
+# --mail-user=username@email.com
+# --mail-type=begin
+# --mail-type=end
+# --account=project_name    # <= put HPC account name here, required on Atlas
 
 set -e
 set -u
@@ -42,17 +41,17 @@ ${NEXTFLOW} run main.nf \
   --queueSize 25 \
   -profile slurm,singularity \
   -resume
-  #--picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
   #--account isu_gif_vrsc       #<= add this to Atlas
 
 # Method 2: Use --reads_file
 # ${NEXTFLOW} run main.nf \
-#   --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
-#  --reads_file read-path.txt \
-#  -profile slurm,singularity \
-#  -resume
-
-#  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
+#   --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
+#   --reads_file read-path.txt \
+#   --queueSize 50 \
+#   --account isu_gif_vrsc \
+#   --outdir "GATK_Results" \
+#   -profile slurm,singularity \
+#   -resume
 
 end=`date +%s`
 

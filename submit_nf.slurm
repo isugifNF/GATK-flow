@@ -8,7 +8,7 @@
 #SBATCH --mail-user=jenchang@iastate.edu
 #SBATCH --mail-type=begin
 #SBATCH --mail-type=end
-#SBATCH --account=isu_gif_vrsc
+# --account=isu_gif_vrsc
 # <= put HPC account name here, required on Atlas and Ceres
 
 set -e
@@ -18,11 +18,14 @@ start=`date +%s`
 
 # === Load Modules here
 # ==  Atlas HPC
-module load singularity
-NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+# module load singularity
+# NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 
 # == Ceres HPC
-# module load nextflow                         # If on Ceres HPC
+module load nextflow
+NEXTFLOW=nextflow
+
+# == Nova HPC
 #module load gcc/7.3.0-xegsmw4 nextflow         # If on Nova/Condo HPC
 #module load singularity
 #NEXTFLOW=nextflow
@@ -37,11 +40,11 @@ cd ${SLURM_SUBMIT_DIR}
 ${NEXTFLOW} run main.nf \
   --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
-  --queueSize 50 \
-  --account isu_gif_vrsc \
+  --queueSize 25 \
   -profile slurm,singularity \
   -resume
   #--picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
+  #--account isu_gif_vrsc       #<= add this to Atlas
 
 # Method 2: Use --reads_file
 # ${NEXTFLOW} run main.nf \

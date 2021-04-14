@@ -5,10 +5,11 @@
 #SBATCH --job-name=NF_GATK
 #SBATCH --output=R-%x.%J.out
 #SBATCH --error=R-%x.%J.err
-# --mail-user=username@email.com
-# --mail-type=begin
-# --mail-type=end
-# --account=isu_gif_vrsc    # <= put HPC account name here, required on Atlas and Ceres
+#SBATCH --mail-user=jenchang@iastate.edu
+#SBATCH --mail-type=begin
+#SBATCH --mail-type=end
+#SBATCH --account=isu_gif_vrsc
+# <= put HPC account name here, required on Atlas and Ceres
 
 set -e
 set -u
@@ -16,10 +17,15 @@ set -u
 start=`date +%s`
 
 # === Load Modules here
-# module load nextflow                         # If on Ceres HPC
-module load gcc/7.3.0-xegsmw4 nextflow         # If on Nova/Condo HPC
+# ==  Atlas HPC
 module load singularity
-NEXTFLOW=nextflow
+NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+
+# == Ceres HPC
+# module load nextflow                         # If on Ceres HPC
+#module load gcc/7.3.0-xegsmw4 nextflow         # If on Nova/Condo HPC
+#module load singularity
+#NEXTFLOW=nextflow
 # NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow  # If on Atlas HPC
 
 # === Set working directory and in/out variables
@@ -31,6 +37,8 @@ cd ${SLURM_SUBMIT_DIR}
 ${NEXTFLOW} run main.nf \
   --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
+  --queueSize 50 \
+  --account isu_gif_vrsc \
   -profile slurm,singularity \
   -resume
   #--picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \

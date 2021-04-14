@@ -18,19 +18,20 @@ def helpMsg() {
 
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
-                            Available: local, condo, atlas, singularity [default:local]
+                            Available: local, slurm, singularity, docker [default:local]
     --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
-    --bwa_app               Link to bwa executable [default: 'bwa']
-    --samtools_app          Link to samtools executable [default: 'samtools']
-    --picard_app            Link to picard executable [default: 'picard'], might want to change to "java -jar ~/PICARD_HOME/picard.jar"
-    --bedtools_app          Link to bedtools executable [default: 'bedtools']
+    --docker_img            Docker image if [-profile docker] is set [default:'j23414/gatk4']
     --gatk_app              Link to gatk executable [default: 'gatk']
+    --bwamem2_app           Link to bwamem2 executable [default: 'bwa-mem2']
+    --samtools_app          Link to samtools executable [default: 'samtools']
+    --bedtools_app          Link to bedtools executable [default: 'bedtools']
     --datamash_app          Link to datamash executable [default: 'datamash']
     --vcftools_app          Link to vcftools executable [default: 'vcftools']
 
    Optional other arguments:
+    --threads               Threads per process [default:4 for local, 16 for slurm]
     --window                Window size passed to bedtools for gatk [default:100000]
-    --queueSize             Maximum jobs to submit to slurm [default:18]
+    --queueSize             Maximum jobs to submit to slurm [default:20]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
 
@@ -63,240 +64,247 @@ if(!params.reads & !params.reads_file){
   exit 0
 }
 
-process fasta_bwa_index {
-  tag "$fasta"
-  label 'bwa'
-  publishDir "${params.outdir}/bwa"
 
-  input:  // genome.fasta
-  path fasta
-
-  output: // [genome.fasta, [genome_index files]]
-  tuple path("$fasta"), path("${fasta}*")
-
-  script:
-  """
-  #! /usr/bin/env bash
-  $bwa_app index $fasta
-  """
-}
-
-process fasta_samtools_faidx {
-  tag "$fasta"
-  label 'samtools'
-  publishDir "${params.outdir}/samtools"
-
-  input:  // genome.fasta
-  path fasta
-
-  output: // genome.fai
-  path "${fasta}.fai"
-
-  """
-  #! /usr/bin/env bash
-  $samtools_app faidx $fasta
-  """
-}
-
-process fasta_picard_dict {
-  tag "$fasta"
-  label 'picard'
-  publishDir "${params.outdir}/picard"
-
-  input:  // genome.fasta
-  path fasta
-
-  output: // genome.dict
-  path "${fasta.simpleName}.dict"
-
-  script:
-  """
-  #! /usr/bin/env bash
-  $picard_app CreateSequenceDictionary \
-    REFERENCE=${fasta} \
-    OUTPUT=${fasta.simpleName}.dict
-  """
-}
-
-process paired_FastqToSAM {
+process FastqToSam {
   tag "$readname"
-  label 'picard'
-  publishDir "${params.outdir}/picard"
+  label 'gatk'
+  publishDir "${params.outdir}/01_MarkAdapters/"
 
   input:  // [readgroup, [left.fq.gz, right.fq.gz], increment_readgroup]
   tuple val(readname), path(readpairs), val(i_readname)
 
   output: // increment_readgroup.bam since one readgroup can have multiple lanes
-  path "${i_readname}.bam"
+  path("*.bam")
 
   """
   #! /usr/bin/env bash
-  $picard_app FastqToSam \
-    FASTQ=${readpairs.get(0)} \
-    FASTQ2=${readpairs.get(1)} \
-    OUTPUT=${i_readname}.bam \
-    READ_GROUP_NAME=${readname} \
-    SAMPLE_NAME=${readname}_name \
-    LIBRARY_NAME=${readname}_lib \
-    PLATFORM="ILLUMINA" \
-    SEQUENCING_CENTER="ISU" \
-    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
+  ${gatk_app} FastqToSam \
+    --FASTQ ${readpairs.get(0)} \
+    --FASTQ2 ${readpairs.get(1)} \
+    --OUTPUT ${i_readname}.bam \
+    --READ_GROUP_NAME ${readname} \
+    --SAMPLE_NAME ${readname}_name \
+    --LIBRARY_NAME ${readname}_lib \
+    --PLATFORM ILLUMINA \
+    --SEQUENCING_CENTER ISU \
+    --USE_JDK_DEFLATER true \
+    --USE_JDK_INFLATER true
   """
 }
 
-process BAM_MarkIlluminaAdapters {
+process MarkIlluminaAdapters {
   tag "${bam.fileName}"
-  label 'picard'
-  publishDir "${params.outdir}/picard"
+  label 'gatk'
+  publishDir "${params.outdir}/01_MarkAdapters/"
 
   input:  // reads.bam
-  path bam
+  path(bam)
 
   output: // reads_marked.bam
-  path "${bam.simpleName}_marked.bam"  //, emit: bam
-  //path "${bam.simpleName}_marked*.txt"
+  path "${bam.simpleName}_marked.bam"
 
   script:
   """
   #! /usr/bin/env bash
-  $picard_app MarkIlluminaAdapters \
-    I=$bam \
-    O=${bam.simpleName}_marked.bam \
-    M=${bam.simpleName}_marked_metrics.txt \
-    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
+  $gatk_app MarkIlluminaAdapters \
+    --INPUT $bam \
+    --OUTPUT ${bam.simpleName}_marked.bam \
+    --METRICS ${bam.simpleName}_marked_metrics.txt \
+    --USE_JDK_DEFLATER true \
+    --USE_JDK_INFLATER true
   """
 }
 
-process BAM_SamToFastq {
+process SamToFastq {
   tag "${bam.fileName}"
-  label 'picard'
-  publishDir "${params.outdir}/picard"
+  label 'gatk'
+  publishDir "${params.outdir}/01_MarkAdapters/"
 
   input:  // reads.bam
-  path bam
+  path(bam)
 
   output: // reads_interleaved.fq
-  path "${bam.simpleName}_interleaved.fq"
+  tuple val("${bam.simpleName}"), path("${bam.simpleName}_newR1.fq"), path("${bam.simpleName}_newR2.fq")
 
   script:
   """
   #! /usr/bin/env bash
-  $picard_app SamToFastq \
-    I=$bam \
-    FASTQ=${bam.simpleName}_interleaved.fq \
-    CLIPPING_ATTRIBUTE=XT \
-    CLIPPING_ACTION=2 \
-    INTERLEAVE=true \
-    NON_PF=true \
-    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
+  $gatk_app SamToFastq \
+    --INPUT $bam \
+    --FASTQ ${bam.simpleName}_newR1.fq \
+    --SECOND_END_FASTQ ${bam.simpleName}_newR2.fq \
+    --CLIPPING_ATTRIBUTE XT \
+    --CLIPPING_ACTION 2 \
+    --INCLUDE_NON_PF_READS true \
+    --USE_JDK_DEFLATER true \
+    --USE_JDK_INFLATER true
+  """
+}
+// INTERLEAVE=true
+// USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
+
+process bwamem2_index {
+  tag "${genome_fasta.simpleName}"
+  label 'bwamem'
+  publishDir "${params.outdir}/02_MapReads"
+
+  input:
+  path(genome_fasta)
+
+  output: // [genome.fasta, [genome_index files]]
+  tuple path("$genome_fasta"), path("${genome_fasta}*")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $bwamem2_app index $genome_fasta
   """
 }
 
-process run_bwa_mem {
-  tag "$readsfq"
-  label 'bwa_mem'
-  publishDir "${params.outdir}/bwa_mem"
+process bwamem2_mem {
+  tag "$readname"
+  label 'bwamem'
+  publishDir "${params.outdir}/02_MapReads"
 
-  input:  // [reads.fq, genome.fasta, genome index files ...]
-  tuple path(readsfq), path(genome_fasta), path(genome_index)
+  input:
+  tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output: // reads_mapped_2_genome.bam
-  path "${readsfq.simpleName}_mapped.bam"
+  path("${readname}_mapped.bam")
 
   script:
   """
   #! /usr/bin/env bash
-  $bwa_app mem \
-   -M \
-   -t 15 \
-   -p ${genome_fasta} \
-   ${readsfq} |\
-  samtools view -buS - > ${readsfq.simpleName}_mapped.bam
+  $bwamem2_app mem -t ${threads} ${genome_fasta} ${readpairs} |\
+     $samtools_app view --threads ${threads} -bS - > ${readname}_mapped.bam
   """
 }
 
-process run_MergeBamAlignment {
-  tag "$readname"
-  label 'picard'
-  publishDir "${params.outdir}/picard"
+process CreateSequenceDictionary {
+  tag "${genome_fasta.simpleName}"
+  label 'gatk'
+  publishDir "${params.outdir}/03_PrepGATK"
+
+  input:
+  path(genome_fasta)
+
+  output:
+  path("${genome_fasta.simpleName}.dict")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $gatk_app CreateSequenceDictionary \
+    -R ${genome_fasta} \
+    -O ${genome_fasta.simpleName}.dict
+  """
+}
+
+process MergeBamAlignment {
+  tag "$i_readname"
+  label 'gatk'
+  publishDir "${params.outdir}/03_PrepGATK"
 
   input:  // [readgroup, unmapped reads, mapped reads]
-  tuple val(readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
+  tuple val(i_readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_dict)
 
   output: // merged bam and bai files
-  path "${readname}_merged.bam", emit:'bam'
-  path "${readname}_merged.bai", emit:'bai'
+  tuple path("${i_readname}_merged.bam"), path("${i_readname}_merged.bai")
 
   script:
   """
   #! /usr/bin/env bash
-  $picard_app MergeBamAlignment \
-    R=$genome_fasta \
-    UNMAPPED_BAM=$read_unmapped \
-    ALIGNED_BAM=$read_mapped \
-    O=${readname}_merged.bam \
-    CREATE_INDEX=true \
-    ADD_MATE_CIGAR=true \
-    CLIP_ADAPTERS=false \
-    CLIP_OVERLAPPING_READS=true \
-    INCLUDE_SECONDARY_ALIGNMENTS=true \
-    MAX_INSERTIONS_OR_DELETIONS=-1 \
-    PRIMARY_ALIGNMENT_STRATEGY=MostDistant \
-    ATTRIBUTES_TO_RETAIN=XS \
-    USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
+  $gatk_app MergeBamAlignment \
+  --REFERENCE_SEQUENCE $genome_fasta \
+  --UNMAPPED_BAM ${read_unmapped} \
+  --ALIGNED_BAM ${read_mapped} \
+  --OUTPUT ${i_readname}_merged.bam \
+  --CREATE_INDEX true \
+  --ADD_MATE_CIGAR true \
+  --CLIP_ADAPTERS false \
+  --CLIP_OVERLAPPING_READS true \
+  --INCLUDE_SECONDARY_ALIGNMENTS true \
+  --MAX_INSERTIONS_OR_DELETIONS -1 \
+  --PRIMARY_ALIGNMENT_STRATEGY MostDistant \
+  --ATTRIBUTES_TO_RETAIN XS \
+  --USE_JDK_DEFLATER true \
+  --USE_JDK_INFLATER true
   """
 }
 
-process fai_bedtools_makewindows {
-  tag "$fai"
+process samtools_faidx {
+  tag "${genome_fasta.simpleName}"
+  label 'samtools'
+  publishDir "${params.outdir}/03_PrepGATK"
+
+  input:
+  path(genome_fasta)
+
+  output:
+  path("${genome_fasta}.fai")
+
+  """
+  #! /usr/bin/env bash
+  $samtools_app faidx $genome_fasta
+  """
+}
+
+process bedtools_makewindows {
+  tag "${genome_fai.simpleName}"
   label 'bedtools'
-  publishDir "${params.outdir}/bedtools"
+  publishDir "${params.outdir}/03_PrepGATK"
 
   input:  // genome.fai
-  path fai
+  path(genome_fai)
 
   output: // genome_coords.bed
-  path "${fai.simpleName}_coords.bed"
+  path("*_coords.bed")
 
   script:
   """
   #! /usr/bin/env bash
-  awk -F'\t' '{print \$1"\t"\$2}' $fai > genome_length.txt
-  $bedtools_app makewindows -w $params.window -g genome_length.txt |\
+  cat ${genome_fai} | awk -F'\t' '{print \$1"\t"\$2}' > genome_length.txt
+  $bedtools_app makewindows -w "$params.window" -g genome_length.txt |\
     awk '{print \$1"\t"\$2+1"\t"\$3}' |\
     sed \$'s/\t/:/1' |\
-    sed \$'s/\t/-/g' > ${fai.simpleName}_coords.bed
+    sed \$'s/\t/-/g' > ${genome_fai.simpleName}_coords.bed
   """
 }
+//  ${fai.simpleName}_coords.bed
 
-process run_gatk_snp {
+
+process gatk_HaplotypeCaller {
   tag "$window"
   label 'gatk'
-  publishDir "${params.outdir}/gatk"
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
 
   input:  // [window, reads files ..., genome files ...]
-  tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
+  tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // identified SNPs as a vcf file
-  path "*.vcf", emit: 'vcf'
-  path "*.vcf.idx", emit: 'idx'
+  path("*.vcf")
 
   script:
   """
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
-  $gatk_app --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller -R $genome_fasta -I \$BAMFILES -L $window --output ${window.replace(':','_')}.vcf
+  $gatk_app --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller \
+    -R $genome_fasta \
+    -I \$BAMFILES \
+    -L $window \
+    --output ${window.replace(':','_')}.vcf
   """
 }
+// --java-options \"-Xmx80g -XX:+UseParallelGC\"
 
 process merge_vcf {
-  publishDir "${params.outdir}/vcftools"
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
 
   input:  // multiple SNP vcf files
   path(vcfs)
 
   output: // merged into one vcf file
-  path "first-round_merged.vcf"
+  path("first-round_merged.vcf")
 
   script:
   """
@@ -309,45 +317,45 @@ process merge_vcf {
 process vcftools_snp_only {
   tag "${merged_vcf.fileName}"
   label 'vcftools'
-  publishDir "${params.outdir}/vcftools"
+  publishDir "${params.outdir}/05_FilterSNPs", mode: 'copy'
 
   input:  // merged SNP vcf file
-  path merged_vcf
+  path(merged_vcf)
 
   output: // vcf file only containing SNPs
-  path "${merged_vcf.simpleName}_snps-only.*"
+  path("${merged_vcf.simpleName}_snps-only.*")
 
   script:
   """
   #! /usr/bin/env bash
   $vcftools_app \
     --vcf $merged_vcf \
-      --remove-indels \
-      --recode \
-      --recode-INFO-all \
-      --out ${merged_vcf.simpleName}_snps-only
+    --remove-indels \
+    --recode \
+    --recode-INFO-all \
+    --out ${merged_vcf.simpleName}_snps-only
   """
 }
 
-process run_SortVCF {
+process SortVcf {
   tag "$vcf.fileName"
-  label 'picard'
-  publishDir "$params.outdir/picard"
+  label 'gatk'
+  publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:  // [SNP.vcf, genome.dict]
   tuple path(vcf), path(dict)
 
   output: // sorted SNP.vcf
-  tuple path ("*.vcf"), path("*.vcf.*")
+  path ("*.vcf")
 
   script:
   """
   #! /usr/bin/env bash
-  $picard_app SortVcf \
-    INPUT=$vcf \
-    SEQUENCE_DICTIONARY=$dict \
-    CREATE_INDEX=true \
-    OUTPUT=${vcf.simpleName}.sorted.vcf
+  $gatk_app SortVcf \
+  --INPUT $vcf \
+  --SEQUENCE_DICTIONARY $dict \
+  --CREATE_INDEX true \
+  --OUTPUT ${vcf.simpleName}_sorted.vcf
   """
 }
 // java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
@@ -371,11 +379,12 @@ process calc_DPvalue {
   """
 }
 
-process gatk_VariantFiltration {
+process VariantFiltration {
   tag "$sorted_snp_vcf.fileName"
+  publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:  // [sorted snp vcf, DP filter, genome files ... ]
-  tuple path(sorted_snp_vcf), val(dp), path(genome_fasta), path(genome_index), path(genome_fai), path(genome_dict)
+  tuple path(sorted_snp_vcf), val(dp), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // filtered to identified SNP variants
   path("${sorted_snp_vcf.simpleName}.marked.vcf")
@@ -396,7 +405,8 @@ process gatk_VariantFiltration {
 // java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
 
 process keep_only_pass {
-  tag "$snp_marked_vcf.fileName"
+  tag "${snp_marked_vcf.fileName}"
+  publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:
   path(snp_marked_vcf)
@@ -412,100 +422,62 @@ process keep_only_pass {
   """
 }
 
-workflow prep_genome {
-  take: reference_fasta
-  main:
-    reference_fasta | (fasta_bwa_index & fasta_samtools_faidx & fasta_picard_dict )
-
-    genome_ch = fasta_bwa_index.out
-      .combine(fasta_samtools_faidx.out)
-      .combine(fasta_picard_dict.out)
-
-  emit:
-    genome_ch
-}
-
-workflow prep_reads {
-  take: reads_fastas // [readgroup, [left.fq.gz, right.fq.gz]]
-  main:
-    i = 1   // incrementing number, will also match line number of reads_file
-    reads_fastas |
-      map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] } |
-      paired_FastqToSAM |
-      BAM_MarkIlluminaAdapters
-
-    reads_ch = BAM_MarkIlluminaAdapters.out
-
-  emit:
-    reads_ch
-}
-
-workflow map_reads {
-   take:
-     reads_ch
-     genome_ch
-
-   main:
-     bwaindex_ch = genome_ch.map { n -> [ n.get(0), n.get(1) ] }
-     reads_ch | BAM_SamToFastq
-     BAM_SamToFastq.out.combine(bwaindex_ch) | run_bwa_mem
-
-     reads_mapped_ch = run_bwa_mem.out.map { n -> [ n.simpleName.replaceFirst("_marked_interleaved_mapped", ""), n ] }
-     reads_unmapped_ch = reads_ch.map { n -> [ n.simpleName.replaceFirst("_marked",""), n ] }
-
-     reads_merged_ch = reads_unmapped_ch
-       .join(reads_mapped_ch)
-       .combine(genome_ch)
-
-   emit:
-     reads_merged_ch
-}
-
 workflow {
-  main:
-    // Reference genome
-    genome_ch = channel.fromPath(params.genome, checkIfExists:true) |
-      prep_genome // | view
+  // == Read in genome and reads channels
+  genome_ch = channel.fromPath(params.genome, checkIfExists:true)
+  if (params.reads) {
+    reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
+  } else {
+    reads_ch = channel.fromPath(params.reads_file, checkIfExists:true) |
+    splitCsv(sep:'\t') |
+    map { n -> [ n.get(0), [n.get(1), n.get(2)]] }
+  }
 
-    // Paired end illumina reads
-    if (params.reads) {
-      rfile_ch = channel.fromFilePairs(params.reads, checkIfExists:true) // | view
-    } else {
-      rfile_ch = channel.fromPath(params.reads_file, checkIfExists:true) |
-        splitCsv(sep:'\t') |
-        map { n -> [ n.get(0), [n.get(1), n.get(2)]] } // | view
-    }
-    reads_ch = rfile_ch | prep_reads
+  // == Since one sample may be run on multiple lanes
+  i = 1
+  ireads_ch = reads_ch | map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] }
 
-    // Map reads to genome
-    map_reads(reads_ch, genome_ch) | run_MergeBamAlignment
+  // == Prepare mapped and unmapped read files
+  cleanreads_ch = ireads_ch | FastqToSam | MarkIlluminaAdapters | SamToFastq |
+    map { n -> [ n.get(0).replaceFirst("_marked",""), [ n.get(1), n.get(2)] ] }
 
-    bam_ch = run_MergeBamAlignment.out.bam.toList() | map { it -> [it]} //| view
-    bai_ch = run_MergeBamAlignment.out.bai.toList() | map { it -> [it]} //| view
-    merged_bam_ch = bam_ch.combine(bai_ch) //| view
+  genome_ch | bwamem2_index | combine(cleanreads_ch) | bwamem2_mem
 
-    genome_ch.map { n -> n.get(2) } |
-      fai_bedtools_makewindows |
-      splitText( by:1 ) |
-      map { n -> n.replaceFirst("\n","") } |
-      combine(merged_bam_ch) |
-      combine(genome_ch) |
-      run_gatk_snp
+  mapped_ch = bwamem2_mem.out |
+    map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
 
-    run_gatk_snp.out.vcf.toList() |
-      merge_vcf |
-      vcftools_snp_only |
-      combine(genome_ch.map {n -> n.get(3)}) |
-      run_SortVCF |
-      map{n->n.get(0)} |
-      calc_DPvalue |
-      view
+  unmapped_ch = MarkIlluminaAdapters.out |
+    map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
 
-    run_SortVCF.out.map{n -> n.get(0)} |
-      combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")}) |
-      combine(genome_ch) |
-      gatk_VariantFiltration |
-      keep_only_pass |
-      view
+  genome_ch | (CreateSequenceDictionary & samtools_faidx )
+  unmapped_ch | join(mapped_ch) | combine(genome_ch) | combine(CreateSequenceDictionary.out) | MergeBamAlignment
+
+  allbai_ch = MergeBamAlignment.out | map { n -> n.get(1)} |
+    collect | map { n -> [n]}
+  allbambai_ch = MergeBamAlignment.out | map { n -> n.get(0)} |
+    collect | map { n -> [n]} | combine(allbai_ch)
+
+  // == Run Gatk Haplotype by interval window
+  samtools_faidx.out | bedtools_makewindows | splitText(){it.trim()} |
+    combine(allbambai_ch) |
+    combine(genome_ch) |
+    combine(CreateSequenceDictionary.out) |
+    combine(samtools_faidx.out) |
+    gatk_HaplotypeCaller |
+    collect |
+    merge_vcf |
+    vcftools_snp_only |
+    combine(CreateSequenceDictionary.out) |
+    SortVcf |
+    calc_DPvalue
+
+  // == Filter resulting SNPs
+  SortVcf.out |
+    combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")}) |
+    combine(genome_ch) |
+    combine(CreateSequenceDictionary.out) |
+    combine(samtools_faidx.out) |
+    VariantFiltration |
+    keep_only_pass
 
 }

@@ -3,24 +3,6 @@
 
 A [Nextflow](https://www.nextflow.io/) wrapper for the [Genome Analysis Toolkit (GATK)](https://gatk.broadinstitute.org/hc/en-us), modified from the pipeline described in the Bioinformatic Workbook: [GATK Best Practices Workflow for DNA-Seq](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0).
 
-<!-- The benefits of Nextflow include:
-
-* write once, run anywhere (`configs/*.config` for singularity, slurm, local)
-* checkpointing and runtime reports
-* customizing for a particular HPC
--->
-
-<!--### Dependencies
-
-For portability, the dependencies for the GATK pipeline are provided as a singularity image. To avoid singularity, the individual programs (`bwa`, `samtools`, `picard`, `bedtools`, `gatk`, `vcftools`) can be configured directly, see help statement (e.g. `--samtools_app`) under "Installation".
-
-* [Nextflow](https://www.nextflow.io/)
-* Singularity Image File
-* Input files:
-  * genome file (`some_genome.fasta`) 
-  * Illumina Paired End reads (`reads_R1.fastq`, `reads_R2.fastq.gz`)
--->
-
 ## Installation
 
 You will need a working version of nextflow, [see here](https://www.nextflow.io/docs/latest/getstarted.html#requirements) on how to install nextflow. Nextflow modules are avialable on some of the HPC computing resources.
@@ -43,25 +25,16 @@ module load nextflow
 # singularity already available, no need for module
 NEXTFLOW=nextflow
 
-# === Atlas
+# === Atlas (will need a local install of nextflow and will need the --account "projectname" flag)
 module load singularity
 NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 ```
 
 </details>
 
-<!--
 ```
 git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd Maize_WGS_Build
-
-nextflow run main.nf --help
-```
--->
-
-```
-git clone https://github.com/isugfNF/GATK.git
-cd GATK
 
 nextflow run main.nf --help
 ```
@@ -69,12 +42,12 @@ nextflow run main.nf --help
 <details><summary>See help statement</summary>
 
 ```
-N E X T F L O W  ~  version 20.07.1
-Launching `main.nf` [zen_woese] - revision: 0516af2de3
+N E X T F L O W  ~  version 20.10.0
+Launching `main.nf` [big_kare] - revision: ca139b5b5f
 Usage:
    The typical command for running the pipeline is as follows:
-   nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile singularity
-   nextflow run main.nf --genome GENOME.fasta --reads_file READ_PATHS.txt -profile singularity
+   nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile slurm,singularity
+   nextflow run main.nf --genome GENOME.fasta --reads_file READ_PATHS.txt -profile slurm,singularity
 
    Mandatory arguments:
     --genome                Genome fasta file, against which reads will be mapped to find SNPs
@@ -85,20 +58,21 @@ Usage:
 
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
-                            Available: local, condo, atlas, singularity [default:local]
+                            Available: local, slurm, singularity, docker [default:local]
     --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
-    --bwa_app               Link to bwa executable [default: 'bwa']
-    --samtools_app          Link to samtools executable [default: 'samtools']
-    --picard_app            Link to picard executable [default: 'picard'], might want to change to "java -jar ~/PICARD_HOME/picard.jar"
-    --bedtools_app          Link to bedtools executable [default: 'bedtools']
+    --docker_img            Docker image if [-profile docker] is set [default:'j23414/gatk4']
     --gatk_app              Link to gatk executable [default: 'gatk']
+    --bwamem2_app           Link to bwamem2 executable [default: 'bwa-mem2']
+    --samtools_app          Link to samtools executable [default: 'samtools']
+    --bedtools_app          Link to bedtools executable [default: 'bedtools']
     --datamash_app          Link to datamash executable [default: 'datamash']
     --vcftools_app          Link to vcftools executable [default: 'vcftools']
 
    Optional other arguments:
+    --threads               Threads per process [default:4 for local, 16 for slurm]
     --window                Window size passed to bedtools for gatk [default:100000]
-    --queueSize             Maximum jobs to submit to slurm [default:18]
-    --account               HPC account name for slurm sbatch, atlas and ceres may require this
+    --queueSize             Maximum jobs to submit to slurm [default:20]
+    --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
 ```
 
@@ -108,7 +82,7 @@ Usage:
 
 Tools required for the workflow are included in the container [aseetharam/gatk:latest](https://github.com/aseetharam/gatk) and should be automatically pulled by nextflow. (Will only need to run `singularity pull` if website connection is unstable.)
 
-<details><summary>More Info</summary>
+<details><summary>If website connection is unstable, pull singularity and use the `-with-singularity` flag</summary>
 
 #### To pull the image
 
@@ -116,19 +90,17 @@ Tools required for the workflow are included in the container [aseetharam/gatk:l
 singularity pull --name gatk.sif shub://aseetharam/gatk:latest
 ```
 
-#### To use the image
+#### Link image to Nextflow using the `-with-singularity` flag.
 
 ```
-singularity exec gatk.sif samtools
-singularity exec gatk.sif bwa
-singularity exec gatk.sif datamash
-singularity exec gatk.sif gatk
-singularity exec gatk.sif java -jar /picard/picard.jar
-singularity exec gatk.sif vcftools
+nextflow run main.nf \
+  --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
+  --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
+  -profile slurm \
+  -with-singularity gatk.sif
 ```
 
 </details>
-
 
 ## Test Dataset
 
@@ -136,7 +108,6 @@ A simple test dataset (`test-data`) is available on [ISU Box](https://iastate.ap
 Only the reads that map to the region of the v5 genome is included, so that this can be tested quickly.
 There are examples of multiple files belonging to same NAM line as well as single file per NAM line to make sure both conditions works correctly.
 The end VCF file should have exactly 27 individuals (lines) in them.
-
 
 ```
 wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
@@ -148,44 +119,14 @@ ls -1 test-data/
 #> ref            # <= folder containing one genome reference
 ```
 
-
-
 ## Running the Pipeline
-
-<!--
->
-> If on a local laptop with nextflow installed:
->
-> ```
-> nextflow run HuffordLab/Maize_WGS_Build
-> ```
->
-> If on HPCC Condo:
->
-> ```
-> module load gcc/7.3.0-xegsmw4 nextflow
-> nextflow run HuffordLab/Maize_WGS_Build -profile condo
-> ```
--->
 
 Fetch the pipeline and fetch the test-data folder.
 
-<!--
 ```
 # Fetch repo
 git clone https://github.com/HuffordLab/Maize_WGS_Build.git
 cd Maize_WGS_Build
-
-# Fetch the test-data folder from ISU box
-wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
-```
--->
-
-```
-# Fetch repo
-git clone https://github.com/isugifNF/GATK.git
-cd GATK
 
 # Fetch the test-data folder from ISU box
 wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
@@ -239,7 +180,6 @@ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 
 </details>
 
-
 ### Using the --reads_file
 
 Instead of using a pattern to specify paired reads (`"test-data/fastq/*_{R1,R2}.fastq.gz"`), we can use a tab-delimited textfile to specify the path to left and right files. The textfile should contain three columns: readname, left read path, right read path.
@@ -266,159 +206,148 @@ BioSample05	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample05_R1.fastq
 
 The Final output will be in a `results` folder. SNPs will be in the VCF file, probably the file with the longest name (e.g. `first-round_merged_snps-only_snp-only.pass-only.vcf`).
 
-<details><summary>See <b>results</b> folder</summary>
+```
+results/
+  |_ 01_MarkAdapters/            #<= folders contain intermediate files
+  |_ 02_MapReads/
+  |_ 03_PrepGATK/
+  |_ 04_GATK/
+  |_ 05_FilterSNPs/
+  |  |_ first-round_merged_snps-only_sorted_snp-only.pass-only.vcf     #<= final SNP file
+  |
+  |_ report.html
+  |_ timeline.html               # <= runtime information for all processes
 
 ```
-ls -ltrh results/
-total 5.8M
-drwxr-s--- 2 user proj 4.0K Oct 12 23:55 sort_fasta/    # <= folders contain intermediate files
-drwxr-s--- 2 user proj 4.0K Oct 12 23:55 samtools/
-drwxr-s--- 2 user proj 4.0K Oct 12 23:55 bwa/
-drwxr-s--- 2 user proj 4.0K Oct 12 23:56 bedtools/
-drwxr-s--- 2 user proj 4.0K Oct 12 23:56 bwa_mem/
-drwxr-s--- 2 user proj 4.0K Oct 13 00:01 gatk/
-drwxr-s--- 2 user proj 4.0K Oct 13 00:01 vcftools/
-drwxr-s--- 2 user proj 4.0K Oct 13 00:01 picard/
-lrwxrwxrwx 1 user proj  132 Oct 13 00:02 first-round_merged_snps-only.marked.vcf
-lrwxrwxrwx 1 user proj  144 Oct 13 00:02 first-round_merged_snps-only_snp-only.pass-only.vcf # <= Final SNP file
--rw-r----- 1 user proj  16K Oct 13 00:02 timeline.html  # <= shows runtime for each portion
--rw-r----- 1 user proj 2.9M Oct 13 00:02 report.html    # <= shows resource use
-```
-
-</details>
 
 ## Example Runs
 
-Some example runs provided to show nextflow output. These were run using the earlier forked version `HuffordLab/Maize_WGS_Build`
+Some example runs provided to show nextflow output.
 
+<details><summary>See example run on <b>Ceres HPC</b> - last update: 14 April 2021</summary>
 
-<details><summary>See example run on <b>Ceres HPC</b> - last update: 3 Feb 2021</summary>
-
-Runtime: 1 hour 8 minutes and 53 seconds.
+Runtime: 1 hour 9 minutes and 27 seconds.
 
 ```
+$ module load nextflow
 $ nextflow run main.nf \
-  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+  --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
-  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
+  --queueSize 25 \
   -profile slurm,singularity \
   -resume
 
 N E X T F L O W  ~  version 20.07.1
-Launching `main.nf` [pedantic_rubens] - revision: a747ccd51b
+Launching `main.nf` [exotic_poincare] - revision: ca139b5b5f
 executor >  slurm (155)
-[d9/564d1a] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
-[80/f79377] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
-[1e/42e9b5] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
-[e3/0cfc12] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
-[f7/6954fd] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
-[4a/e76481] process > map_reads:BAM_SamToFastq (2... [100%] 27 of 27 ✔
-[c0/c46dc2] process > map_reads:run_bwa_mem (20_B... [100%] 27 of 27 ✔
-[a3/34dabf] process > run_MergeBamAlignment (20_B... [100%] 27 of 27 ✔
-[72/48d546] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
-[4d/f3e393] process > run_gatk_snp (chr1:700001-8... [100%] 10 of 10 ✔
-[c6/a4e3c7] process > merge_vcf                      [100%] 1 of 1 ✔
-[a8/111516] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
-[59/9b2691] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
-[03/8b7fa4] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
-[19/447f44] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
-[8d/5cd96b] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
-2265.1
-
-/lustre/project/isu_gif_vrsc/jenchang/_wrkspc/2021-02-03_gatk/GATK/work/8d/5cd96bb7e928bcab97d655bfd7fb51/first-round_merged_snps-only_snp-only.pass-only.vcf
-Completed at: 03-Feb-2021 16:34:36
-Duration    : 1h 8m 53s
-CPU hours   : 7.7
+[8c/e6342a] process > FastqToSam (BioSample26)       [100%] 27 of 27 ✔
+[6d/13aa51] process > MarkIlluminaAdapters (27_Bi... [100%] 27 of 27 ✔
+[dc/032273] process > SamToFastq (20_BioSample24_... [100%] 27 of 27 ✔
+[0e/a8d488] process > bwamem2_index (b73_chr1_150... [100%] 1 of 1 ✔
+[2f/b3746a] process > bwamem2_mem (20_BioSample24)   [100%] 27 of 27 ✔
+[bc/8e43cc] process > CreateSequenceDictionary (b... [100%] 1 of 1 ✔
+[fb/c2b500] process > samtools_faidx (b73_chr1_15... [100%] 1 of 1 ✔
+[64/b1241a] process > MergeBamAlignment (20_BioSa... [100%] 27 of 27 ✔
+[16/ea1c05] process > bedtools_makewindows (b73_c... [100%] 1 of 1 ✔
+[34/14a2e1] process > gatk_HaplotypeCaller (chr1:... [100%] 10 of 10 ✔
+[a2/6d9b6d] process > merge_vcf                      [100%] 1 of 1 ✔
+[dd/187a85] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
+[cc/367a9a] process > SortVcf (first-round_merged... [100%] 1 of 1 ✔
+[ef/102130] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
+[8f/281023] process > VariantFiltration (first-ro... [100%] 1 of 1 ✔
+[fc/5d8e7c] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
+Completed at: 14-Apr-2021 01:51:21
+Duration    : 1h 9m 27s
+CPU hours   : 7.3
 Succeeded   : 155
 ```
 
 </details>
 
-<details><summary>See example run on <b>Atlas HPC</b> - last update: 3 Feb 2021</summary>
+<details><summary>See example run on <b>Atlas HPC</b> - last update: 14 April 2021</summary>
 
-Example run on Atlas with 27 Illumina paired-end reads (listed in `my_group.txt`) against genome (`ref/b73_chr1_150000001-151000000.fasta`).
-
-Runtime: 50 minutes and 14 seconds.
+Runtime: 50 minutes and 50 seconds.
  
 ```
-$ nextflow run main.nf \
-  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
+$ module load singularity
+$ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
+$ $NEXTFLOW run main.nf \
+  --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
-  --picard_app "java -Djava.io.tmpdir=$TMPDIR -jar /picard/picard.jar" \
-  -profile slurm,singularity \
+  --queueSize 50 \
   --account isu_gif_vrsc \
-  -resume
-
-N E X T F L O W  ~  version 20.07.1
-Launching `main.nf` [big_booth] - revision: a747ccd51b
-executor >  slurm (155)
-[2e/665f72] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
-[45/7458ae] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
-[a2/a9c461] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
-[6f/ec7470] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
-[18/4f4053] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
-[c6/0ffbce] process > map_reads:BAM_SamToFastq (2... [100%] 27 of 27 ✔
-[0f/e7b1e8] process > map_reads:run_bwa_mem (20_B... [100%] 27 of 27 ✔
-[1b/239d26] process > run_MergeBamAlignment (20_B... [100%] 27 of 27 ✔
-[0c/8adc53] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
-[2e/e64a00] process > run_gatk_snp (chr1:900001-9... [100%] 10 of 10 ✔
-[3e/83e2f3] process > merge_vcf                      [100%] 1 of 1 ✔
-[a0/5f6f83] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
-[69/f74162] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
-[32/e7e338] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
-[e8/116f44] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
-[4b/903e15] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
-2265.1
-
-/project/isu_gif_vrsc/Jennifer/_wrkspc/Maize_WGS_Build/work/4b/903e15844eea88011cddde770c6569/first-round_merged_snps-only_snp-only.pass-only.vcf
-Completed at: 03-Feb-2021 17:51:00
-Duration    : 50m 14s
-CPU hours   : 6.2
-Succeeded   : 155  
-```
-  
-</details>
-
-<details><summary>See example run on <b>Condo HPC</b></summary>
-
-Runtime: 2 hours 5 minutes and 39 seconds.
-
-```
-$ nextflow run main.nf \
-  --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
-  --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
   -profile slurm,singularity \
   -resume
-  
+
 N E X T F L O W  ~  version 20.07.1
-Launching `main.nf` [clever_monod] - revision: d5f8cdb041
-WARN: It appears you have never run this project before -- Option `-resume` is ignored
-executor >  slurm (156)
-[69/9f3959] process > prep_genome:fasta_sort (b73... [100%] 1 of 1 ✔
-[f9/c3d116] process > prep_genome:fasta_bwa_index... [100%] 1 of 1 ✔
-[b8/d79a0e] process > prep_genome:fasta_samtools_... [100%] 1 of 1 ✔
-[22/9ebdcb] process > prep_genome:fasta_picard_di... [100%] 1 of 1 ✔
-[a3/3b449a] process > prep_reads:paired_FastqToSA... [100%] 27 of 27 ✔
-[6b/52d8e1] process > prep_reads:BAM_MarkIllumina... [100%] 27 of 27 ✔
-[d4/bebcc3] process > map_reads:BAM_SamToFastq (B... [100%] 27 of 27 ✔
-[42/367b85] process > map_reads:run_bwa_mem (BioS... [100%] 27 of 27 ✔
-[ca/71fa06] process > run_MergeBamAlignment (BioS... [100%] 27 of 27 ✔
-[ea/a3adc0] process > fai_bedtools_makewindows (b... [100%] 1 of 1 ✔
-[f4/683387] process > run_gatk_snp (chr1:900001-9... [100%] 10 of 10 ✔
-[45/bc1e85] process > merge_vcf                      [100%] 1 of 1 ✔
-[f4/5e9035] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
-[2d/58f2c9] process > run_SortVCF (first-round_me... [100%] 1 of 1 ✔
-[df/c75b2a] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
-[3c/9cec07] process > gatk_VariantFiltration (fir... [100%] 1 of 1 ✔
-[90/6b176a] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
-/work/GIF/jenchang/github/Maize_WGS_Build/work/90/6b176a1ae430c87dca4745359652e3/first-round_merged_snps-only_snp-only.pass-only.vcf
-Completed at: 28-Oct-2020 15:03:08
-Duration    : 2h 5m 39s
-CPU hours   : 10.1
-Succeeded   : 156
+Launching `main.nf` [tiny_cori] - revision: ca139b5b5f
+executor >  slurm (155)
+[92/cfaf35] process > FastqToSam (BioSample24)       [100%] 27 of 27 ✔
+[59/37e2e8] process > MarkIlluminaAdapters (20_Bi... [100%] 27 of 27 ✔
+[b3/cc67d6] process > SamToFastq (20_BioSample24_... [100%] 27 of 27 ✔
+[46/9d4a5f] process > bwamem2_index (b73_chr1_150... [100%] 1 of 1 ✔
+[e4/ad114c] process > bwamem2_mem (20_BioSample24)   [100%] 27 of 27 ✔
+[a7/044560] process > CreateSequenceDictionary (b... [100%] 1 of 1 ✔
+[50/e81af8] process > samtools_faidx (b73_chr1_15... [100%] 1 of 1 ✔
+[67/1c03a5] process > MergeBamAlignment (20_BioSa... [100%] 27 of 27 ✔
+[f6/d94e63] process > bedtools_makewindows (b73_c... [100%] 1 of 1 ✔
+[49/3a6d6c] process > gatk_HaplotypeCaller (chr1:... [100%] 10 of 10 ✔
+[68/e88beb] process > merge_vcf                      [100%] 1 of 1 ✔
+[55/66c4cf] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
+[92/7bad2f] process > SortVcf (first-round_merged... [100%] 1 of 1 ✔
+[0b/e824cf] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
+[a9/33a4f2] process > VariantFiltration (first-ro... [100%] 1 of 1 ✔
+[ef/769ed6] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
+Completed at: 14-Apr-2021 01:03:12
+Duration    : 50m 50s
+CPU hours   : 6.4
+Succeeded   : 155
+```
+  
+</details>
+
+<details><summary>See example run on <b>Nova HPC</b> - last update: 14 April 2021</summary>
+
+Runtime: 1 hour 46 minutes and 17 seconds.
+
+```
+$ module load gcc/7.3.0-xegsmw4 nextflow
+$ module load singularity
+$ nextflow run main.nf \
+  --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
+  --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
+  --queueSize 25 \
+  -profile slurm,singularity \
+  -resume
+
+N E X T F L O W  ~  version 20.07.1
+Launching `main.nf` [condescending_monod] - revision: ca139b5b5f
+executor >  slurm (155)
+[5c/b08536] process > FastqToSam (BioSample04)       [100%] 27 of 27 ✔
+[88/46d321] process > MarkIlluminaAdapters (27_Bi... [100%] 27 of 27 ✔
+[96/200ac5] process > SamToFastq (21_BioSample24_... [100%] 27 of 27 ✔
+[4c/8735b5] process > bwamem2_index (b73_chr1_150... [100%] 1 of 1 ✔
+[86/06740e] process > bwamem2_mem (21_BioSample24)   [100%] 27 of 27 ✔
+[c0/3e6521] process > CreateSequenceDictionary (b... [100%] 1 of 1 ✔
+[e2/856737] process > samtools_faidx (b73_chr1_15... [100%] 1 of 1 ✔
+[25/529408] process > MergeBamAlignment (21_BioSa... [100%] 27 of 27 ✔
+[40/ca5ca7] process > bedtools_makewindows (b73_c... [100%] 1 of 1 ✔
+[8a/0d6f00] process > gatk_HaplotypeCaller (chr1:... [100%] 10 of 10 ✔
+[96/0b957b] process > merge_vcf                      [100%] 1 of 1 ✔
+[96/1f9848] process > vcftools_snp_only (first-ro... [100%] 1 of 1 ✔
+[60/edb33d] process > SortVcf (first-round_merged... [100%] 1 of 1 ✔
+[b0/372a4e] process > calc_DPvalue (first-round_m... [100%] 1 of 1 ✔
+[f3/cfb966] process > VariantFiltration (first-ro... [100%] 1 of 1 ✔
+[86/024c8b] process > keep_only_pass (first-round... [100%] 1 of 1 ✔
+Completed at: 14-Apr-2021 02:17:48
+Duration    : 1h 46m 17s
+CPU hours   : 6.6
+Succeeded   : 155
 ```
 
 </details>
+
+<!-- May not support local MacOS run anymore
 
 <details><summary>See example run on <b>MacOS</b> laptop where dependencies are locally installed</summary>
 
@@ -456,48 +385,6 @@ Launching `main.nf` [amazing_rubens] - revision: 66f7e69455
 
 /Users/jenchang/Desktop/new/Maize_WGS_Build/work/88/bcb45710b109051ac54bbb0b2fb682/first-round_merged_snps-only_snp-only.pass-only.vcf
 ```
-
-</details>
-
-
-<!--
-
-<details><summary>See example HPCC Condo running output </summary>
-
-In this case there are 101 slurm jobs on the queue so far. The process `fastqc` has a total of 258 jobs to submit (one for each `test-data` fastq file).
-
-```
-nextflow run main.nf -profile condo
-#> N E X T F L O W  ~  version 20.07.1
-#> Launching `main.nf` [boring_carson] - revision: 99983aad6a
-#> executor >  slurm (101)
-#> [0f/70feab] process > fastqc (null)         [  0%] 1 of 258
-#> [f4/0b666a] process > gatk0_index_help      [  0%] 0 of 1
-#> [ef/d2fbd1] process > gatk0_index (1)       [  0%] 0 of 1
-#> [2d/c71570] process > gatk2_preprocess_help [100%] 1 of 1 ✔
-#> [57/4481cd] process > gatk3_cmdsgen_help    [100%] 1 of 1 ✔
-#> [cf/a201a6] process > gatk4_filter_help     [100%] 1 of 1 ✔
-#> /work/GIF/jenchang/_wrkspc/_testremote/Maize_WGS_Build/test-data/ref/b73_chr1_150000001-151000000.fasta
-#> /work/GIF/jenchang/_wrkspc/_testremote/Maize_WGS_Build/test-data/fastq/1721-5_S1_L004_R1_001.fastq.gz
-#> /work/GIF/jenchang/_wrkspc/_testremote/Maize_WGS_Build/test-data/fastq/CML333_S0_L001_R2_001.fastq.gz
-#> /work/GIF/jenchang/_wrkspc/_testremote/Maize_WGS_Build/test-data/fastq/1508-1_S1_L004_R2_001.fa
-```
-</details>
-
-
-All output is in a `results` folder.
-
-<details><summary>See explaination of <b>results</b> folder</summary>
-
-  ```
-  results/
-    |_ report.html       # detailed breakdown of which processes where run on what input
-    |_ timeline.html     # gantt chart-like timeline of each process and how long it ran
-    |
-    |_ fastqc/           # Contains the html files generated by fastqc quality check
-    |_ 0_index/          # Contains the genome index files generated by gatk0
-    |_ ....
-  ```
 
 </details>
 

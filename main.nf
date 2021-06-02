@@ -295,6 +295,30 @@ process gatk_HaplotypeCaller {
     --output ${window.replace(':','_')}.vcf
   """
 }
+
+
+process gatk_HaplotypeCaller_invariant {
+  tag "$window"
+  label 'gatk'
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
+
+  input:  // [window, reads files ..., genome files ...]
+  tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
+
+  output: // identified SNPs as a vcf file
+  path("*.vcf")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
+  $gatk_app --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller \
+    -R $genome_fasta \
+    -I \$BAMFILES \
+    -L $window \
+    --output ${}_${window.replace(':','_')}.vcf
+  """
+}
 // --java-options \"-Xmx80g -XX:+UseParallelGC\"
 
 process merge_vcf {

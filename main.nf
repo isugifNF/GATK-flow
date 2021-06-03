@@ -16,6 +16,8 @@ def helpMsg() {
     --genome                Genome fasta file, against which reads will be mapped to find SNPs
     --reads_file            Text file (tab delimited) with three columns [readname left_fastq.gz right_fastq.gz]. Will need full path for files.
 
+    --invariant             Output invariant sites [default:false]
+
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
@@ -78,7 +80,7 @@ process FastqToSam {
 
   """
   #! /usr/bin/env bash
-  ${gatk_app} FastqToSam \
+  ${gatk_app} ${java_options} FastqToSam \
     --FASTQ ${readpairs.get(0)} \
     --FASTQ2 ${readpairs.get(1)} \
     --OUTPUT ${i_readname}.bam \
@@ -106,7 +108,7 @@ process MarkIlluminaAdapters {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app MarkIlluminaAdapters \
+  $gatk_app ${java_options} MarkIlluminaAdapters \
     --INPUT $bam \
     --OUTPUT ${bam.simpleName}_marked.bam \
     --METRICS ${bam.simpleName}_marked_metrics.txt \
@@ -129,7 +131,7 @@ process SamToFastq {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app SamToFastq \
+  $gatk_app ${java_options} SamToFastq \
     --INPUT $bam \
     --FASTQ ${bam.simpleName}_newR1.fq \
     --SECOND_END_FASTQ ${bam.simpleName}_newR2.fq \
@@ -194,7 +196,7 @@ process CreateSequenceDictionary {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app CreateSequenceDictionary \
+  $gatk_app ${java_options} CreateSequenceDictionary \
     -R ${genome_fasta} \
     -O ${genome_fasta.simpleName}.dict
   """
@@ -214,7 +216,7 @@ process MergeBamAlignment {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app MergeBamAlignment \
+  $gatk_app ${java_options} MergeBamAlignment \
   --REFERENCE_SEQUENCE $genome_fasta \
   --UNMAPPED_BAM ${read_unmapped} \
   --ALIGNED_BAM ${read_mapped} \
@@ -288,7 +290,7 @@ process gatk_HaplotypeCaller {
   """
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
-  $gatk_app --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller \
+  $gatk_app ${java_options} HaplotypeCaller \
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
@@ -296,9 +298,8 @@ process gatk_HaplotypeCaller {
   """
 }
 
-
 process gatk_HaplotypeCaller_invariant {
-  tag "$window"
+  tag "$window:${bam.simpleName}"
   label 'gatk'
   publishDir "${params.outdir}/04_GATK", mode: 'copy'
 
@@ -312,11 +313,12 @@ process gatk_HaplotypeCaller_invariant {
   """
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
-  $gatk_app --java-options \"-Xmx80g -XX:+UseParallelGC\" HaplotypeCaller \
+  $gatk_app ${java_options} HaplotypeCaller \
+    --include-invariant \
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
-    --output ${}_${window.replace(':','_')}.vcf
+    --output ${bam.simpleName}_${window.replace(':','_')}.vcf
   """
 }
 // --java-options \"-Xmx80g -XX:+UseParallelGC\"
@@ -375,7 +377,7 @@ process SortVcf {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app SortVcf \
+  $gatk_app ${java_options} SortVcf \
   --INPUT $vcf \
   --SEQUENCE_DICTIONARY $dict \
   --CREATE_INDEX true \
@@ -416,7 +418,7 @@ process VariantFiltration {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app VariantFiltration \
+  $gatk_app ${java_options} VariantFiltration \
     --reference $genome_fasta \
     --sequence-dictionary $genome_dict \
     --variant $sorted_snp_vcf \
@@ -476,18 +478,31 @@ workflow {
   genome_ch | (CreateSequenceDictionary & samtools_faidx )
   unmapped_ch | join(mapped_ch) | combine(genome_ch) | combine(CreateSequenceDictionary.out) | MergeBamAlignment
 
-  allbai_ch = MergeBamAlignment.out | map { n -> n.get(1)} |
-    collect | map { n -> [n]}
-  allbambai_ch = MergeBamAlignment.out | map { n -> n.get(0)} |
-    collect | map { n -> [n]} | combine(allbai_ch)
+  if(params.invariant) {
+    allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
+  } else {
+    allbai_ch = MergeBamAlignment.out | map { n -> n.get(1)} |
+      collect | map { n -> [n]}
+    allbambai_ch = MergeBamAlignment.out | map { n -> n.get(0)} |
+      collect | map { n -> [n]} | combine(allbai_ch)
+  }
 
   // == Run Gatk Haplotype by interval window
-  samtools_faidx.out | bedtools_makewindows | splitText(){it.trim()} |
+  part1_ch = samtools_faidx.out |
+    bedtools_makewindows |
+    splitText(){it.trim()} |
     combine(allbambai_ch) |
     combine(genome_ch) |
     combine(CreateSequenceDictionary.out) |
-    combine(samtools_faidx.out) |
-    gatk_HaplotypeCaller |
+    combine(samtools_faidx.out)
+
+  if(params.invariant){
+    part2_ch = part1_ch | gatk_HaplotypeCaller_invariant
+  }else{
+    part2_ch = part1_ch | gatk_HaplotypeCaller
+  }
+
+  part2_ch |
     collect |
     merge_vcf |
     vcftools_snp_only |
@@ -503,5 +518,4 @@ workflow {
     combine(samtools_faidx.out) |
     VariantFiltration |
     keep_only_pass
-
 }

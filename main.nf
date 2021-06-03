@@ -314,14 +314,59 @@ process gatk_HaplotypeCaller_invariant {
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
   $gatk_app ${java_options} HaplotypeCaller \
-    --include-invariant \
+    -ERC GVCF -ERC BP_RESOLUTION \
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
     --output ${bam.simpleName}_${window.replace(':','_')}.vcf
   """
 }
-// --java-options \"-Xmx80g -XX:+UseParallelGC\"
+// --include-invariant
+
+// Consolidate GVCFs
+process CombineGVCFs {
+  tag "ConsolidateGVCFs"
+  label 'gatk'
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
+
+  input:  // [window, reads files ..., genome files ...]
+  tuple path(gvcf), path(genome_fasta), path(genome_dict), path(genome_fai)
+
+  output: // identified SNPs as a vcf file
+  path("*.vcf")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  GVCFFILES=`echo $gvcf | sed 's/ / --variant /g' | tr '[' ' ' | tr ']' ' '`
+  $gatk_app ${java_options} CombineGVCFs \
+    -R $genome_fasta \
+    --variant \$GVCFFILES \
+    --output all_combined.vcf
+  """
+}
+
+// Joint-Call Cohorts
+process GenotypeGVCFs {
+  tag "JointCallCohorts"
+  label 'gatk'
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
+
+  input:  // [window, reads files ..., genome files ...]
+  tuple path(all_combined_gvcf), path(genome_fasta), path(genome_dict), path(genome_fai)
+
+  output: // identified SNPs as a vcf file
+  path("*.vcf")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $gatk_app ${java_options} GenotypeGVCFs \
+    -R $genome_fasta \
+    -V $all_combined_gvcf \
+    --output output.vcf
+  """
+}
 
 process merge_vcf {
   publishDir "${params.outdir}/04_GATK", mode: 'copy'
@@ -427,7 +472,6 @@ process VariantFiltration {
     --output ${sorted_snp_vcf.simpleName}.marked.vcf
   """
 }
-
 // java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
 
 process keep_only_pass {
@@ -497,14 +541,16 @@ workflow {
     combine(samtools_faidx.out)
 
   if(params.invariant){
-    part2_ch = part1_ch | gatk_HaplotypeCaller_invariant
+    part2_ch = part1_ch | gatk_HaplotypeCaller_invariant |
+     combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
+     CombineGVCFs |
+     combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
+     GenotypeGVCFs
   }else{
-    part2_ch = part1_ch | gatk_HaplotypeCaller
+    part2_ch = part1_ch | gatk_HaplotypeCaller | collect | merge_vcf
   }
 
   part2_ch |
-    collect |
-    merge_vcf |
     vcftools_snp_only |
     combine(CreateSequenceDictionary.out) |
     SortVcf |

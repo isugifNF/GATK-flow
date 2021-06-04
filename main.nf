@@ -542,7 +542,7 @@ workflow {
     combine(samtools_faidx.out)
 
   if(params.invariant){
-    part2_ch = part1_ch | gatk_HaplotypeCaller_invariant | collect |
+    part2_ch = part1_ch | gatk_HaplotypeCaller_invariant | collect | map { n -> [n] } |
      combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
      CombineGVCFs |
      combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |

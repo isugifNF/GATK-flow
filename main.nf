@@ -541,28 +541,32 @@ workflow {
     combine(CreateSequenceDictionary.out) |
     combine(samtools_faidx.out)
 
+  // If invariant, stop at output.vcf (all sites). If not, only keep SNPs with SNP filtering.
   if(params.invariant){
+
     part2_ch = part1_ch | gatk_HaplotypeCaller_invariant | collect | map { n -> [n] } |
      combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
      CombineGVCFs |
      combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
      GenotypeGVCFs
+
   }else{
-    part2_ch = part1_ch | gatk_HaplotypeCaller | collect | merge_vcf
+
+    part2_ch = part1_ch | gatk_HaplotypeCaller | collect | merge_vcf |
+      vcftools_snp_only |
+      combine(CreateSequenceDictionary.out) |
+      SortVcf |
+      calc_DPvalue
+
+    // == Filter resulting SNPs
+    SortVcf.out |
+      combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")}) |
+      combine(genome_ch) |
+      combine(CreateSequenceDictionary.out) |
+      combine(samtools_faidx.out) |
+      VariantFiltration |
+      keep_only_pass
+
   }
 
-  part2_ch |
-    vcftools_snp_only |
-    combine(CreateSequenceDictionary.out) |
-    SortVcf |
-    calc_DPvalue
-
-  // == Filter resulting SNPs
-  SortVcf.out |
-    combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")}) |
-    combine(genome_ch) |
-    combine(CreateSequenceDictionary.out) |
-    combine(samtools_faidx.out) |
-    VariantFiltration |
-    keep_only_pass
 }

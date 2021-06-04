@@ -177,8 +177,9 @@ process bwamem2_mem {
   script:
   """
   #! /usr/bin/env bash
-  $bwamem2_app mem -t ${threads} ${genome_fasta} ${readpairs} |\
-     $samtools_app view --threads ${threads} -bS - > ${readname}_mapped.bam
+  PROC1=\$((`nproc` * 3/4))
+  $bwamem2_app mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
+     $samtools_app view --threads 1 -bS - > ${readname}_mapped.bam
   """
 }
 
@@ -314,14 +315,14 @@ process gatk_HaplotypeCaller_invariant {
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
   $gatk_app ${java_options} HaplotypeCaller \
-    -ERC GVCF -ERC BP_RESOLUTION \
+    -ERC BP_RESOLUTION \
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
     --output ${bam.simpleName}_${window.replace(':','_')}.vcf
   """
 }
-// --include-invariant
+// --include-invariant -ERC GVCF
 
 // Consolidate GVCFs
 process CombineGVCFs {

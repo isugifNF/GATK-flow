@@ -77,10 +77,11 @@ process FastqToSam {
 
   output: // increment_readgroup.bam since one readgroup can have multiple lanes
   path("*.bam")
-
+  
+  script:
   """
   #! /usr/bin/env bash
-  ${gatk_app} ${java_options} FastqToSam \
+  ${gatk_app} --java-options "${java_options}" FastqToSam \
     --FASTQ ${readpairs.get(0)} \
     --FASTQ2 ${readpairs.get(1)} \
     --OUTPUT ${i_readname}.bam \
@@ -92,6 +93,12 @@ process FastqToSam {
     --USE_JDK_DEFLATER true \
     --USE_JDK_INFLATER true
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${i_readname}.bam
+  """  
 }
 
 process MarkIlluminaAdapters {
@@ -108,12 +115,19 @@ process MarkIlluminaAdapters {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app ${java_options} MarkIlluminaAdapters \
+  $gatk_app --java-options "${java_options}" MarkIlluminaAdapters \
     --INPUT $bam \
     --OUTPUT ${bam.simpleName}_marked.bam \
     --METRICS ${bam.simpleName}_marked_metrics.txt \
     --USE_JDK_DEFLATER true \
     --USE_JDK_INFLATER true
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${bam.simpleName}_marked.bam
+  touch ${bam.simpleName}_marked_metrics.txt
   """
 }
 
@@ -131,7 +145,7 @@ process SamToFastq {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app ${java_options} SamToFastq \
+  $gatk_app --java-options "${java_options}" SamToFastq \
     --INPUT $bam \
     --FASTQ ${bam.simpleName}_newR1.fq \
     --SECOND_END_FASTQ ${bam.simpleName}_newR2.fq \
@@ -140,6 +154,13 @@ process SamToFastq {
     --INCLUDE_NON_PF_READS true \
     --USE_JDK_DEFLATER true \
     --USE_JDK_INFLATER true
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${bam.simpleName}_newR1.fq
+  touch ${bam.simpleName}_newR2.fq
   """
 }
 // INTERLEAVE=true
@@ -161,6 +182,12 @@ process bwamem2_index {
   #! /usr/bin/env bash
   $bwamem2_app index $genome_fasta
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${genome_fasta}.variousindexfiles
+  """
 }
 
 process bwamem2_mem {
@@ -181,6 +208,12 @@ process bwamem2_mem {
   $bwamem2_app mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
      $samtools_app view --threads 1 -bS - > ${readname}_mapped.bam
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${readname}_mapped.bam
+  """
 }
 
 process CreateSequenceDictionary {
@@ -197,9 +230,15 @@ process CreateSequenceDictionary {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app ${java_options} CreateSequenceDictionary \
+  $gatk_app --java-options "${java_options}" CreateSequenceDictionary \
     -R ${genome_fasta} \
     -O ${genome_fasta.simpleName}.dict
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${genome_fasta.simpleName}.dict
   """
 }
 
@@ -217,7 +256,7 @@ process MergeBamAlignment {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app ${java_options} MergeBamAlignment \
+  $gatk_app --java-options "${java_options}" MergeBamAlignment \
   --REFERENCE_SEQUENCE $genome_fasta \
   --UNMAPPED_BAM ${read_unmapped} \
   --ALIGNED_BAM ${read_mapped} \
@@ -233,6 +272,13 @@ process MergeBamAlignment {
   --USE_JDK_DEFLATER true \
   --USE_JDK_INFLATER true
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${i_readname}_merged.bam
+  touch ${i_readname}_merged.bai
+  """
 }
 
 process samtools_faidx {
@@ -246,9 +292,16 @@ process samtools_faidx {
   output:
   path("${genome_fasta}.fai")
 
+  script:
   """
   #! /usr/bin/env bash
   $samtools_app faidx $genome_fasta
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${genome_fasta}.fai
   """
 }
 
@@ -272,6 +325,14 @@ process bedtools_makewindows {
     sed \$'s/\t/:/1' |\
     sed \$'s/\t/-/g' > ${genome_fai.simpleName}_coords.bed
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  echo "0-1000" > ${genome_fai.simpleName}_coords.bed
+  echo "1000-2000" >> ${genome_fai.simpleName}_coords.bed
+  echo "2000-3000" >> ${genome_fai.simpleName}_coords.bed
+  """
 }
 //  ${fai.simpleName}_coords.bed
 
@@ -291,11 +352,16 @@ process gatk_HaplotypeCaller {
   """
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
-  $gatk_app ${java_options} HaplotypeCaller \
+  $gatk_app --java-options "${java_options}" HaplotypeCaller \
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
     --output ${window.replace(':','_')}.vcf
+  """
+
+  stub:
+  """
+  touch ${window.replace(':','_')}.vcf
   """
 }
 
@@ -314,12 +380,18 @@ process gatk_HaplotypeCaller_invariant {
   """
   #! /usr/bin/env bash
   BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
-  $gatk_app ${java_options} HaplotypeCaller \
+  $gatk_app --java-options "${java_options}" HaplotypeCaller \
     -ERC BP_RESOLUTION \
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
     --output ${bam.simpleName}_${window.replace(':','_')}.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${bam.simpleName}_${window.replace(':','_')}.vcf
   """
 }
 // --include-invariant -ERC GVCF
@@ -340,10 +412,16 @@ process CombineGVCFs {
   """
   #! /usr/bin/env bash
   GVCFFILES=`echo $gvcf | sed 's/ / --variant /g' | tr '[' ' ' | tr ']' ' '`
-  $gatk_app ${java_options} CombineGVCFs \
+  $gatk_app --java-options "${java_options}" CombineGVCFs \
     -R $genome_fasta \
     --variant \$GVCFFILES \
     --output all_combined.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch all_combined.vcf
   """
 }
 
@@ -362,10 +440,16 @@ process GenotypeGVCFs {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app ${java_options} GenotypeGVCFs \
+  $gatk_app --java-options "${java_options}" GenotypeGVCFs \
     -R $genome_fasta \
     -V $all_combined_gvcf \
     --output output.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch output.vcf
   """
 }
 
@@ -383,6 +467,12 @@ process merge_vcf {
   #! /usr/bin/env bash
   cat ${vcfs.get(0)} | grep "^#" > first-round_merged.vcf
   cat ${vcfs} | grep -v "^#" >> first-round_merged.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch first-round_merged.vcf
   """
 }
 
@@ -407,6 +497,12 @@ process vcftools_snp_only {
     --recode-INFO-all \
     --out ${merged_vcf.simpleName}_snps-only
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${merged_vcf.simpleName}_snps-only.outputfiles
+  """
 }
 
 process SortVcf {
@@ -423,11 +519,17 @@ process SortVcf {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app ${java_options} SortVcf \
+  $gatk_app --java-options "${java_options}" SortVcf \
   --INPUT $vcf \
   --SEQUENCE_DICTIONARY $dict \
   --CREATE_INDEX true \
   --OUTPUT ${vcf.simpleName}_sorted.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${vcf.simpleName}_sorted.vcf
   """
 }
 // java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
@@ -449,6 +551,13 @@ process calc_DPvalue {
   cat dp.txt | $datamash_app mean 1 sstdev 1 > dp.stats
   cat dp.stats | awk '{print \$1+5*\$2}'
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  # idk what default number should be here
+  echo "75"
+  """
 }
 
 process VariantFiltration {
@@ -464,13 +573,19 @@ process VariantFiltration {
   script:
   """
   #! /usr/bin/env bash
-  $gatk_app ${java_options} VariantFiltration \
+  $gatk_app --java-options "${java_options}" VariantFiltration \
     --reference $genome_fasta \
     --sequence-dictionary $genome_dict \
     --variant $sorted_snp_vcf \
     --filter-expression \"QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || DP > $dp\" \
     --filter-name "FAIL" \
     --output ${sorted_snp_vcf.simpleName}.marked.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${sorted_snp_vcf.simpleName}.marked.vcf
   """
 }
 // java -Xmx100g -Djava.io.tmpdir=$TMPDIR -jar
@@ -490,6 +605,12 @@ process keep_only_pass {
   #! /usr/bin/env bash
   cat $snp_marked_vcf | grep "^#" > ${snp_marked_vcf.simpleName}_snp-only.pass-only.vcf
   cat $snp_marked_vcf | grep -v "^#" | awk '\$7=="PASS"' >> ${snp_marked_vcf.simpleName}_snp-only.pass-only.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${snp_marked_vcf.simpleName}_snp-only.pass-only.vcf
   """
 }
 

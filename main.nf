@@ -77,7 +77,7 @@ process FastqToSam {
 
   output: // increment_readgroup.bam since one readgroup can have multiple lanes
   path("*.bam")
-  
+
   script:
   """
   #! /usr/bin/env bash
@@ -98,7 +98,7 @@ process FastqToSam {
   """
   #! /usr/bin/env bash
   touch ${i_readname}.bam
-  """  
+  """
 }
 
 process MarkIlluminaAdapters {
@@ -340,7 +340,10 @@ process bedtools_makewindows {
 process gatk_HaplotypeCaller {
   tag "$window"
   label 'gatk'
+  clusterOptions = "-N 1 -n 36 -t 01:00:00"
   publishDir "${params.outdir}/04_GATK", mode: 'copy'
+  errorStrategy 'retry'
+  maxRetries 3
 
   input:  // [window, reads files ..., genome files ...]
   tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)

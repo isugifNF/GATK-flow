@@ -83,6 +83,8 @@ Usage:
     --queueSize             Maximum jobs to submit to slurm [default:20]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
+
+NOTE: Genome name should not contain any periods before the ".fasta"
 ```
 
 </details>
@@ -151,7 +153,7 @@ nextflow run isugifNF/GATK \
   -resume
 ```
 
-or 
+or
 
 ```
 nextflow run isugifNF/GATK \
@@ -275,7 +277,7 @@ Succeeded   : 155
 <details><summary>See example run on <b>Atlas HPC</b> - last update: 14 April 2021</summary>
 
 Runtime: 50 minutes and 50 seconds.
- 
+
 ```
 $ module load singularity
 $ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
@@ -311,7 +313,7 @@ Duration    : 50m 50s
 CPU hours   : 6.4
 Succeeded   : 155
 ```
-  
+
 </details>
 
 <details><summary>See example run on <b>Nova HPC</b> - last update: 14 April 2021</summary>

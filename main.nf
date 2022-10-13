@@ -82,8 +82,8 @@ process FastqToSam {
   """
   #! /usr/bin/env bash
   ${gatk_app} --java-options "${java_options}" FastqToSam \
-    --FASTQ ${readpairs.get(0)} \
-    --FASTQ2 ${readpairs.get(1)} \
+    --FASTQ ${readpairs.getAt(0)} \
+    --FASTQ2 ${readpairs.getAt(1)} \
     --OUTPUT ${i_readname}.bam \
     --READ_GROUP_NAME ${readname} \
     --SAMPLE_NAME ${readname}_name \
@@ -468,7 +468,7 @@ process merge_vcf {
   script:
   """
   #! /usr/bin/env bash
-  cat ${vcfs.get(0)} | grep "^#" > first-round_merged.vcf
+  cat ${vcfs.getAt(0)} | grep "^#" > first-round_merged.vcf
   cat ${vcfs} | grep -v "^#" >> first-round_merged.vcf
   """
 
@@ -625,16 +625,16 @@ workflow {
   } else {
     reads_ch = channel.fromPath(params.reads_file, checkIfExists:true) |
     splitCsv(sep:'\t') |
-    map { n -> [ n.get(0), [n.get(1), n.get(2)]] }
+    map { n -> [ n.getAt(0), [n.getAt(1), n.getAt(2)]] }
   }
 
   // == Since one sample may be run on multiple lanes
   i = 1
-  ireads_ch = reads_ch | map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] }
+  ireads_ch = reads_ch | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
 
   // == Prepare mapped and unmapped read files
   cleanreads_ch = ireads_ch | FastqToSam | MarkIlluminaAdapters | SamToFastq |
-    map { n -> [ n.get(0).replaceFirst("_marked",""), [ n.get(1), n.get(2)] ] }
+    map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
 
   genome_ch | bwamem2_index | combine(cleanreads_ch) | bwamem2_mem
 
@@ -650,9 +650,9 @@ workflow {
   if(params.invariant) {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
   } else {
-    allbai_ch = MergeBamAlignment.out | map { n -> n.get(1)} |
+    allbai_ch = MergeBamAlignment.out | map { n -> n.getAt(1)} |
       collect | map { n -> [n]}
-    allbambai_ch = MergeBamAlignment.out | map { n -> n.get(0)} |
+    allbambai_ch = MergeBamAlignment.out | map { n -> n.getAt(0)} |
       collect | map { n -> [n]} | combine(allbai_ch)
   }
 

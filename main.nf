@@ -21,19 +21,20 @@ def helpMsg() {
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
-    --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
-    --docker_img            Docker image if [-profile docker] is set [default:'j23414/gatk4']
-    --gatk_app              Link to gatk executable [default: 'gatk']
-    --bwamem2_app           Link to bwamem2 executable [default: 'bwa-mem2']
-    --samtools_app          Link to samtools executable [default: 'samtools']
-    --bedtools_app          Link to bedtools executable [default: 'bedtools']
-    --datamash_app          Link to datamash executable [default: 'datamash']
-    --vcftools_app          Link to vcftools executable [default: 'vcftools']
+    --singularity_img       Singularity image if [-profile singularity] is set [default:'${params.singularity_img}']
+    --docker_img            Docker image if [-profile docker] is set [default:'${params.docker_img}']
+    --gatk_app              Link to gatk executable [default: '$gatk_app']
+    --bwamem2_app           Link to bwamem2 executable [default: '$bwamem2_app']
+    --samtools_app          Link to samtools executable [default: '$samtools_app']
+    --bedtools_app          Link to bedtools executable [default: '$bedtools_app']
+    --datamash_app          Link to datamash executable [default: '$datamash_app']
+    --vcftools_app          Link to vcftools executable [default: '$vcftools_app']
 
    Optional other arguments:
+    --java_options          Java options for gatk [default:'${java_options}']
     --threads               Threads per process [default:4 for local, 16 for slurm]
-    --window                Window size passed to bedtools for gatk [default:100000]
-    --queueSize             Maximum jobs to submit to slurm [default:20]
+    --window                Window size passed to bedtools for gatk [default:${params.window}]
+    --queueSize             Maximum jobs to submit to slurm [default:${params.queueSize}}]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
 

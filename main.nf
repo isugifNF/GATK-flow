@@ -58,26 +58,26 @@ if (parameter_diff.size() != 0){
 }
 
 
-if(!params.genome) {
-  log.info"""
-#===============
-  ERROR: --genome GENOME.fasta    A reference genome file is required!
-#===============
-  """
-  helpMsg()
-  exit 0
-}
-
-if(!params.reads & !params.reads_file){
-  log.info"""
-#===============
-  ERROR: --reads "*_{r1,r2}.fq.gz"     Paired-end read files are required! Either as a glob or as a tab-delimited text file
-         --reads_file READS_FILE.txt
-#===============
-  """
-  helpMsg()
-  exit 0
-}
+// if(!params.genome) {
+//   log.info"""
+// #===============
+//   ERROR: --genome GENOME.fasta    A reference genome file is required!
+// #===============
+//   """
+//   helpMsg()
+//   exit 0
+// }
+// 
+// if(!params.reads & !params.reads_file){
+//   log.info"""
+// #===============
+//   ERROR: --reads "*_{r1,r2}.fq.gz"     Paired-end read files are required! Either as a glob or as a tab-delimited text file
+//          --reads_file READS_FILE.txt
+// #===============
+//   """
+//   helpMsg()
+//   exit 0
+// }
 
 
 process FastqToSam {
@@ -629,13 +629,23 @@ process keep_only_pass {
 
 workflow {
   // == Read in genome and reads channels
-  genome_ch = channel.fromPath(params.genome, checkIfExists:true)
+  if(params.genome) {
+    genome_ch = channel.fromPath(params.genome, checkIfExists:true)
+      | view {file -> "Genome file : $file "}
+  } else {
+    exit 1, "[Missing File(s) Error] Maize_WGS_Build requires a reference '--genome [GENOME.fasta]' \n"
+  }
+
   if (params.reads) {
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
+      | view {files -> "Read files : $files "}
+  } else if (params.reads_file) {
+    reads_ch = channel.fromPath(params.reads_file, checkIfExists:true)
+      | splitCsv(sep:'\t')
+      | map { n -> [ n.get(0), [n.get(1), n.get(2)]] }
+      | view {files -> "Read files : $files "}
   } else {
-    reads_ch = channel.fromPath(params.reads_file, checkIfExists:true) |
-    splitCsv(sep:'\t') |
-    map { n -> [ n.get(0), [n.get(1), n.get(2)]] }
+    exit 1, "[Missing File(s) Error] Maize_WGS_Build requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
   }
 
   // == Since one sample may be run on multiple lanes

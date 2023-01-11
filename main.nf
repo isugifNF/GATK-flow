@@ -650,10 +650,10 @@ workflow {
 
   // == Since one sample may be run on multiple lanes
   i = 1
-  ireads_ch = reads_ch | map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] }
 
   // == Prepare mapped and unmapped read files
-  cleanreads_ch = ireads_ch
+  cleanreads_ch = reads_ch
+    | map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] }
     | FastqToSam
     | MarkIlluminaAdapters
     | SamToFastq

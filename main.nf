@@ -630,64 +630,89 @@ workflow {
   ireads_ch = reads_ch | map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] }
 
   // == Prepare mapped and unmapped read files
-  cleanreads_ch = ireads_ch | FastqToSam | MarkIlluminaAdapters | SamToFastq |
-    map { n -> [ n.get(0).replaceFirst("_marked",""), [ n.get(1), n.get(2)] ] }
+  cleanreads_ch = ireads_ch
+    | FastqToSam
+    | MarkIlluminaAdapters
+    | SamToFastq
+    | map { n -> [ n.get(0).replaceFirst("_marked",""), [ n.get(1), n.get(2)] ] }
 
-  genome_ch | bwamem2_index | combine(cleanreads_ch) | bwamem2_mem
+  genome_ch
+    | bwamem2_index
+    | combine(cleanreads_ch)
+    | bwamem2_mem
 
-  mapped_ch = bwamem2_mem.out |
-    map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
+  mapped_ch = bwamem2_mem.out
+    | map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
 
-  unmapped_ch = MarkIlluminaAdapters.out |
-    map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
+  unmapped_ch = MarkIlluminaAdapters.out
+    | map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
 
-  genome_ch | (CreateSequenceDictionary & samtools_faidx )
-  unmapped_ch | join(mapped_ch) | combine(genome_ch) | combine(CreateSequenceDictionary.out) | MergeBamAlignment
+  genome_ch 
+    | (CreateSequenceDictionary & samtools_faidx )
+  unmapped_ch 
+    | join(mapped_ch)
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | MergeBamAlignment
 
   if(params.invariant) {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
   } else {
-    allbai_ch = MergeBamAlignment.out | map { n -> n.get(1)} |
-      collect | map { n -> [n]}
-    allbambai_ch = MergeBamAlignment.out | map { n -> n.get(0)} |
-      collect | map { n -> [n]} | combine(allbai_ch)
+    allbai_ch = MergeBamAlignment.out
+      | map { n -> n.get(1)}
+      | collect | map { n -> [n]}
+
+    allbambai_ch = MergeBamAlignment.out
+      | map { n -> n.get(0)}
+      | collect
+      | map { n -> [n]}
+      | combine(allbai_ch)
   }
 
   // == Run Gatk Haplotype by interval window
-  part1_ch = samtools_faidx.out |
-    bedtools_makewindows |
-    splitText(){it.trim()} |
-    combine(allbambai_ch) |
-    combine(genome_ch) |
-    combine(CreateSequenceDictionary.out) |
-    combine(samtools_faidx.out)
+  part1_ch = samtools_faidx.out
+    | bedtools_makewindows
+    | splitText(){it.trim()}
+    | combine(allbambai_ch)
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | combine(samtools_faidx.out)
 
   // If invariant, stop at output.vcf (all sites). If not, only keep SNPs with SNP filtering.
   if(params.invariant){
 
-    part2_ch = part1_ch | gatk_HaplotypeCaller_invariant | collect | map { n -> [n] } |
-     combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
-     CombineGVCFs |
-     combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
-     GenotypeGVCFs
+    part2_ch = part1_ch
+      | gatk_HaplotypeCaller_invariant
+      | collect
+      | map { n -> [n] }
+      | combine(genome_ch)
+      | combine(CreateSequenceDictionary.out)
+      | combine(samtools_faidx.out)
+      | CombineGVCFs
+      | combine(genome_ch)
+      | combine(CreateSequenceDictionary.out)
+      | combine(samtools_faidx.out)
+      | GenotypeGVCFs
 
   }else{
 
-    part2_ch = part1_ch | gatk_HaplotypeCaller | collect | merge_vcf |
-      vcftools_snp_only |
-      combine(CreateSequenceDictionary.out) |
-      SortVcf |
-      calc_DPvalue
+    part2_ch = part1_ch
+      | gatk_HaplotypeCaller
+      | collect
+      | merge_vcf
+      | vcftools_snp_only
+      | combine(CreateSequenceDictionary.out)
+      | SortVcf
+      | calc_DPvalue
 
     // == Filter resulting SNPs
-    SortVcf.out |
-      combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")}) |
-      combine(genome_ch) |
-      combine(CreateSequenceDictionary.out) |
-      combine(samtools_faidx.out) |
-      VariantFiltration |
-      keep_only_pass
-
+    SortVcf.out
+      | combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")})
+      | combine(genome_ch)
+      | combine(CreateSequenceDictionary.out)
+      | combine(samtools_faidx.out)
+      | VariantFiltration
+      | keep_only_pass
   }
 
 }

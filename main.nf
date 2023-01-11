@@ -46,6 +46,18 @@ if(params.help){
   exit 0
 }
 
+def parameters_valid = ['help','outdir',
+  'genome','reads','reads_file','invariant',
+  'singularity_img','docker_img',
+  'gatk_app','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
+  'java_options','window','queueSize','queue-size','account', 'threads'] as Set
+
+def parameter_diff = params.keySet() - parameters_valid
+if (parameter_diff.size() != 0){
+   exit 1, "[Pipeline error] Parameter(s) $parameter_diff is(are) not valid in the pipeline!\n"
+}
+
+
 if(!params.genome) {
   log.info"""
 #===============

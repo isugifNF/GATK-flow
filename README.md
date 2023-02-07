@@ -45,17 +45,14 @@ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
 </details>
 
 ```
-git clone https://github.com/HuffordLab/Maize_WGS_Build.git
-cd Maize_WGS_Build
-
-nextflow run main.nf --help
+nextflow run isugifNF/GATK --help
 ```
 
 <details><summary>See help statement</summary>
 
 ```
 N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [big_kare] - revision: ca139b5b5f
+Launching `isugifNF/GATK` [big_kare] - revision: ca139b5b5f
 Usage:
    The typical command for running the pipeline is as follows:
    nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile slurm,singularity
@@ -86,6 +83,8 @@ Usage:
     --queueSize             Maximum jobs to submit to slurm [default:20]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
+
+NOTE: Genome name should not contain any periods before the ".fasta"
 ```
 
 </details>
@@ -105,7 +104,7 @@ singularity pull --name gatk.sif shub://aseetharam/gatk:latest
 #### Link image to Nextflow using the `-with-singularity` flag.
 
 ```
-nextflow run main.nf \
+nextflow run isugifNF/GATK \
   --genome "test-data/ref/b73_chr1_150000001-151000000.fasta" \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
   -profile slurm \
@@ -136,9 +135,8 @@ ls -1 test-data/
 Fetch the pipeline and fetch the test-data folder.
 
 ```
-# Fetch repo
-git clone https://github.com/HuffordLab/Maize_WGS_Build.git
-cd Maize_WGS_Build
+# Fetch pipeline
+nextflow run isugifNF/GATK --help
 
 # Fetch the test-data folder from ISU box
 wget https://iastate.box.com/shared/static/wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
@@ -148,17 +146,17 @@ tar -xf wt85l6s4nw4kycm2bo0gpgjq752osatu.gz
 The general format of a run with the pipeline is to provide a genome file (`--genome`) and Illumina Paired-End Reads files (`--reads` or `--reads_file`).
 
 ```
-nextflow run main.nf \
+nextflow run isugifNF/GATK \
   --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
   --reads "test-data/fastq/*_{R1,R2}.fastq.gz" \
   -profile slurm,singularity \
   -resume
 ```
 
-or 
+or
 
 ```
-nextflow run main.nf \
+nextflow run isugifNF/GATK \
   --genome test-data/ref/b73_chr1_150000001-151000000.fasta \
   --reads_file read-path.txt \
   -profile slurm,singularity \
@@ -279,7 +277,7 @@ Succeeded   : 155
 <details><summary>See example run on <b>Atlas HPC</b> - last update: 14 April 2021</summary>
 
 Runtime: 50 minutes and 50 seconds.
- 
+
 ```
 $ module load singularity
 $ NEXTFLOW=/project/isu_gif_vrsc/programs/nextflow
@@ -315,7 +313,7 @@ Duration    : 50m 50s
 CPU hours   : 6.4
 Succeeded   : 155
 ```
-  
+
 </details>
 
 <details><summary>See example run on <b>Nova HPC</b> - last update: 14 April 2021</summary>

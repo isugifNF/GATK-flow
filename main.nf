@@ -90,13 +90,13 @@ process FastqToSam {
 
   output: // increment_readgroup.bam since one readgroup can have multiple lanes
   path("*.bam")
-  
+
   script:
   """
   #! /usr/bin/env bash
   ${gatk_app} --java-options "${java_options}" FastqToSam \
-    --FASTQ ${readpairs.get(0)} \
-    --FASTQ2 ${readpairs.get(1)} \
+    --FASTQ ${readpairs.getAt(0)} \
+    --FASTQ2 ${readpairs.getAt(1)} \
     --OUTPUT ${i_readname}.bam \
     --READ_GROUP_NAME ${readname} \
     --SAMPLE_NAME ${readname}_name \
@@ -111,7 +111,7 @@ process FastqToSam {
   """
   #! /usr/bin/env bash
   touch ${i_readname}.bam
-  """  
+  """
 }
 
 process MarkIlluminaAdapters {
@@ -353,7 +353,10 @@ process bedtools_makewindows {
 process gatk_HaplotypeCaller {
   tag "$window"
   label 'gatk'
+  clusterOptions = "-N 1 -n 36 -t 01:00:00"
   publishDir "${params.outdir}/04_GATK", mode: 'copy'
+  errorStrategy 'retry'
+  maxRetries 3
 
   input:  // [window, reads files ..., genome files ...]
   tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
@@ -478,7 +481,7 @@ process merge_vcf {
   script:
   """
   #! /usr/bin/env bash
-  cat ${vcfs.get(0)} | grep "^#" > first-round_merged.vcf
+  cat ${vcfs.getAt(0)} | grep "^#" > first-round_merged.vcf
   cat ${vcfs} | grep -v "^#" >> first-round_merged.vcf
   """
 
@@ -633,7 +636,7 @@ workflow {
     genome_ch = channel.fromPath(params.genome, checkIfExists:true)
       | view {file -> "Genome file : $file "}
   } else {
-    exit 1, "[Missing File(s) Error] Maize_WGS_Build requires a reference '--genome [GENOME.fasta]' \n"
+    exit 1, "[Missing File(s) Error] This pipeline requires a reference '--genome [GENOME.fasta]' \n"
   }
 
   if (params.reads) {
@@ -642,10 +645,10 @@ workflow {
   } else if (params.reads_file) {
     reads_ch = channel.fromPath(params.reads_file, checkIfExists:true)
       | splitCsv(sep:'\t')
-      | map { n -> [ n.get(0), [n.get(1), n.get(2)]] }
+      | map { n -> [ n.getAt(0), [n.getAt(1), n.getAt(2)]] }
       | view {files -> "Read files : $files "}
   } else {
-    exit 1, "[Missing File(s) Error] Maize_WGS_Build requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
+    exit 1, "[Missing File(s) Error] This pipeline requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
   }
 
   // == Since one sample may be run on multiple lanes
@@ -653,11 +656,11 @@ workflow {
 
   // == Prepare mapped and unmapped read files
   cleanreads_ch = reads_ch
-    | map { n -> [n.get(0), n.get(1), "${i++}_"+n.get(0)] }
+    | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
     | FastqToSam
     | MarkIlluminaAdapters
     | SamToFastq
-    | map { n -> [ n.get(0).replaceFirst("_marked",""), [ n.get(1), n.get(2)] ] }
+    | map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
 
   genome_ch
     | bwamem2_index
@@ -682,11 +685,12 @@ workflow {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
   } else {
     allbai_ch = MergeBamAlignment.out
-      | map { n -> n.get(1)}
-      | collect | map { n -> [n]}
+      | map { n -> n.getAt(1)}
+      | collect 
+      | map { n -> [n]}
 
     allbambai_ch = MergeBamAlignment.out
-      | map { n -> n.get(0)}
+      | map { n -> n.getAt(0)}
       | collect
       | map { n -> [n]}
       | combine(allbai_ch)

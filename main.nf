@@ -21,19 +21,20 @@ def helpMsg() {
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
-    --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
-    --docker_img            Docker image if [-profile docker] is set [default:'j23414/gatk4']
-    --gatk_app              Link to gatk executable [default: 'gatk']
-    --bwamem2_app           Link to bwamem2 executable [default: 'bwa-mem2']
-    --samtools_app          Link to samtools executable [default: 'samtools']
-    --bedtools_app          Link to bedtools executable [default: 'bedtools']
-    --datamash_app          Link to datamash executable [default: 'datamash']
-    --vcftools_app          Link to vcftools executable [default: 'vcftools']
+    --singularity_img       Singularity image if [-profile singularity] is set [default:'${params.singularity_img}']
+    --docker_img            Docker image if [-profile docker] is set [default:'${params.docker_img}']
+    --gatk_app              Link to gatk executable [default: '$gatk_app']
+    --bwamem2_app           Link to bwamem2 executable [default: '$bwamem2_app']
+    --samtools_app          Link to samtools executable [default: '$samtools_app']
+    --bedtools_app          Link to bedtools executable [default: '$bedtools_app']
+    --datamash_app          Link to datamash executable [default: '$datamash_app']
+    --vcftools_app          Link to vcftools executable [default: '$vcftools_app']
 
    Optional other arguments:
+    --java_options          Java options for gatk [default:'${java_options}']
     --threads               Threads per process [default:4 for local, 16 for slurm]
-    --window                Window size passed to bedtools for gatk [default:100000]
-    --queueSize             Maximum jobs to submit to slurm [default:20]
+    --window                Window size passed to bedtools for gatk [default:${params.window}]
+    --queueSize             Maximum jobs to submit to slurm [default:${params.queueSize}}]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
 
@@ -45,26 +46,38 @@ if(params.help){
   exit 0
 }
 
-if(!params.genome) {
-  log.info"""
-#===============
-  ERROR: --genome GENOME.fasta    A reference genome file is required!
-#===============
-  """
-  helpMsg()
-  exit 0
+def parameters_valid = ['help','outdir',
+  'genome','reads','reads_file','invariant',
+  'singularity_img','docker_img',
+  'gatk_app','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
+  'java_options','window','queueSize','queue-size','account', 'threads'] as Set
+
+def parameter_diff = params.keySet() - parameters_valid
+if (parameter_diff.size() != 0){
+   exit 1, "[Pipeline error] Parameter(s) $parameter_diff is(are) not valid in the pipeline!\n"
 }
 
-if(!params.reads & !params.reads_file){
-  log.info"""
-#===============
-  ERROR: --reads "*_{r1,r2}.fq.gz"     Paired-end read files are required! Either as a glob or as a tab-delimited text file
-         --reads_file READS_FILE.txt
-#===============
-  """
-  helpMsg()
-  exit 0
-}
+
+// if(!params.genome) {
+//   log.info"""
+// #===============
+//   ERROR: --genome GENOME.fasta    A reference genome file is required!
+// #===============
+//   """
+//   helpMsg()
+//   exit 0
+// }
+// 
+// if(!params.reads & !params.reads_file){
+//   log.info"""
+// #===============
+//   ERROR: --reads "*_{r1,r2}.fq.gz"     Paired-end read files are required! Either as a glob or as a tab-delimited text file
+//          --reads_file READS_FILE.txt
+// #===============
+//   """
+//   helpMsg()
+//   exit 0
+// }
 
 
 process FastqToSam {
@@ -619,78 +632,114 @@ process keep_only_pass {
 
 workflow {
   // == Read in genome and reads channels
-  genome_ch = channel.fromPath(params.genome, checkIfExists:true)
+  if(params.genome) {
+    genome_ch = channel.fromPath(params.genome, checkIfExists:true)
+      | view {file -> "Genome file : $file "}
+  } else {
+    exit 1, "[Missing File(s) Error] This pipeline requires a reference '--genome [GENOME.fasta]' \n"
+  }
+
   if (params.reads) {
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
+      | view {files -> "Read files : $files "}
+  } else if (params.reads_file) {
+    reads_ch = channel.fromPath(params.reads_file, checkIfExists:true)
+      | splitCsv(sep:'\t')
+      | map { n -> [ n.getAt(0), [n.getAt(1), n.getAt(2)]] }
+      | view {files -> "Read files : $files "}
   } else {
-    reads_ch = channel.fromPath(params.reads_file, checkIfExists:true) |
-    splitCsv(sep:'\t') |
-    map { n -> [ n.getAt(0), [n.getAt(1), n.getAt(2)]] }
+    exit 1, "[Missing File(s) Error] This pipeline requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
   }
 
   // == Since one sample may be run on multiple lanes
   i = 1
-  ireads_ch = reads_ch | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
 
   // == Prepare mapped and unmapped read files
-  cleanreads_ch = ireads_ch | FastqToSam | MarkIlluminaAdapters | SamToFastq |
-    map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
+  cleanreads_ch = reads_ch
+    | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
+    | FastqToSam
+    | MarkIlluminaAdapters
+    | SamToFastq
+    | map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
 
-  genome_ch | bwamem2_index | combine(cleanreads_ch) | bwamem2_mem
+  genome_ch
+    | bwamem2_index
+    | combine(cleanreads_ch)
+    | bwamem2_mem
 
-  mapped_ch = bwamem2_mem.out |
-    map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
+  mapped_ch = bwamem2_mem.out
+    | map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
 
-  unmapped_ch = MarkIlluminaAdapters.out |
-    map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
+  unmapped_ch = MarkIlluminaAdapters.out
+    | map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
 
-  genome_ch | (CreateSequenceDictionary & samtools_faidx )
-  unmapped_ch | join(mapped_ch) | combine(genome_ch) | combine(CreateSequenceDictionary.out) | MergeBamAlignment
+  genome_ch 
+    | (CreateSequenceDictionary & samtools_faidx )
+  unmapped_ch 
+    | join(mapped_ch)
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | MergeBamAlignment
 
   if(params.invariant) {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
   } else {
-    allbai_ch = MergeBamAlignment.out | map { n -> n.getAt(1)} |
-      collect | map { n -> [n]}
-    allbambai_ch = MergeBamAlignment.out | map { n -> n.getAt(0)} |
-      collect | map { n -> [n]} | combine(allbai_ch)
+    allbai_ch = MergeBamAlignment.out
+      | map { n -> n.getAt(1)}
+      | collect 
+      | map { n -> [n]}
+
+    allbambai_ch = MergeBamAlignment.out
+      | map { n -> n.getAt(0)}
+      | collect
+      | map { n -> [n]}
+      | combine(allbai_ch)
   }
 
   // == Run Gatk Haplotype by interval window
-  part1_ch = samtools_faidx.out |
-    bedtools_makewindows |
-    splitText(){it.trim()} |
-    combine(allbambai_ch) |
-    combine(genome_ch) |
-    combine(CreateSequenceDictionary.out) |
-    combine(samtools_faidx.out)
+  part1_ch = samtools_faidx.out
+    | bedtools_makewindows
+    | splitText(){it.trim()}
+    | combine(allbambai_ch)
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | combine(samtools_faidx.out)
 
   // If invariant, stop at output.vcf (all sites). If not, only keep SNPs with SNP filtering.
   if(params.invariant){
 
-    part2_ch = part1_ch | gatk_HaplotypeCaller_invariant | collect | map { n -> [n] } |
-     combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
-     CombineGVCFs |
-     combine(genome_ch) | combine(CreateSequenceDictionary.out) | combine(samtools_faidx.out) |
-     GenotypeGVCFs
+    part2_ch = part1_ch
+      | gatk_HaplotypeCaller_invariant
+      | collect
+      | map { n -> [n] }
+      | combine(genome_ch)
+      | combine(CreateSequenceDictionary.out)
+      | combine(samtools_faidx.out)
+      | CombineGVCFs
+      | combine(genome_ch)
+      | combine(CreateSequenceDictionary.out)
+      | combine(samtools_faidx.out)
+      | GenotypeGVCFs
 
   }else{
 
-    part2_ch = part1_ch | gatk_HaplotypeCaller | collect | merge_vcf |
-      vcftools_snp_only |
-      combine(CreateSequenceDictionary.out) |
-      SortVcf |
-      calc_DPvalue
+    part2_ch = part1_ch
+      | gatk_HaplotypeCaller
+      | collect
+      | merge_vcf
+      | vcftools_snp_only
+      | combine(CreateSequenceDictionary.out)
+      | SortVcf
+      | calc_DPvalue
 
     // == Filter resulting SNPs
-    SortVcf.out |
-      combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")}) |
-      combine(genome_ch) |
-      combine(CreateSequenceDictionary.out) |
-      combine(samtools_faidx.out) |
-      VariantFiltration |
-      keep_only_pass
-
+    SortVcf.out
+      | combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")})
+      | combine(genome_ch)
+      | combine(CreateSequenceDictionary.out)
+      | combine(samtools_faidx.out)
+      | VariantFiltration
+      | keep_only_pass
   }
 
 }

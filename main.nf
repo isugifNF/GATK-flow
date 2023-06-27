@@ -47,9 +47,9 @@ if(params.help){
 }
 
 def parameters_valid = ['help','outdir',
-  'genome','reads','reads_file','invariant',
+  'genome','reads','reads_file','invariant','seq',
   'singularity_img','docker_img',
-  'gatk_app','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
+  'gatk_app','star_app','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
   'java_options','window','queueSize','queue-size','account', 'threads'] as Set
 
 def parameter_diff = params.keySet() - parameters_valid
@@ -176,6 +176,55 @@ process SamToFastq {
   touch ${bam.simpleName}_newR2.fq
   """
 }
+
+process STAR_index {
+  tag "${genome_fasta.simpleName}"
+  label 'star'
+  publishDir "${params.outdir}/02_MapReads"
+  input:
+  path(genome_fasta)
+
+  output: // [genome.fasta, [genome_index files]]
+  tuple path("$genome_fasta"), path("Genome/STAR_index")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $star_app \
+  --runThreadN $task.cpus \
+  --runMode genomeGenerate \
+  --genomeDir Genome/STAR_index \
+  --genomeFastaFiles $genome_fasta
+  """
+}
+
+process STAR_align {
+  tag "${readname}"
+  label 'star'
+  publishDir "${params.outdir}/02_MapReads"
+  input:
+  tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
+
+  output:
+  tuple val("$readname"), path("results_twopass/${readname}_*.bam"), path("results_twopass/${readname}_*final.out") // bam? bai?
+
+  script:
+  """
+  #! /usr/bin/env bash
+  mkdir star_twopass_output
+  $star_app \
+  --runThreadN $task.cpus \
+  --outFileNamePrefix star_twopass_output/${readname}_ \
+  --genomeDir ${genome_index} \
+  --readFilesIn $readpairs \
+  --outSAMtype BAM SortedByCoordinate \
+  --twopassMode Basic
+
+  # Another option
+  # https://gatk.broadinstitute.org/hc/en-us/community/posts/15104189520283-STAR-and-GATK-RNAseq-based-SNP-detection
+  """
+}
+
 // INTERLEAVE=true
 // USE_JDK_DEFLATER=true USE_JDK_INFLATER=true
 
@@ -212,7 +261,7 @@ process bwamem2_mem {
   tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output: // reads_mapped_2_genome.bam
-  path("${readname}_mapped.bam")
+  tuple val("$readname"), path("${readname}_mapped.bam")
 
   script:
   """
@@ -662,13 +711,21 @@ workflow {
     | SamToFastq
     | map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
 
-  genome_ch
+  if(params.seq == "dna"){
+    mapped_ch = genome_ch
     | bwamem2_index
     | combine(cleanreads_ch)
     | bwamem2_mem
+  } else if( params.seq == "rna"){
+    mapped_ch = genome_ch
+    | STAR_index
+    | combine(cleanreads_ch)
+    | STAR_align
+    | map { n -> [ n.getAt(0), n.getAt(1)]}
+  }
 
-  mapped_ch = bwamem2_mem.out
-    | map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
+  // mapped_ch = bwamem2_mem.out // probably change this to aligned_ch
+  //   | map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
 
   unmapped_ch = MarkIlluminaAdapters.out
     | map { n -> [n.simpleName.replaceFirst("_marked",""), n] }

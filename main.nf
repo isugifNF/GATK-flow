@@ -30,6 +30,8 @@ def helpMsg() {
     --datamash_app          Link to datamash executable [default: '$datamash_app']
     --vcftools_app          Link to vcftools executable [default: '$vcftools_app']
 
+    --star_index_param      Parameters to pass to STAR index [default:'${params.star_index_param}']
+
    Optional other arguments:
     --java_options          Java options for gatk [default:'${java_options}']
     --threads               Threads per process [default:4 for local, 16 for slurm]
@@ -49,7 +51,7 @@ if(params.help){
 def parameters_valid = ['help','outdir',
   'genome','reads','reads_file','invariant','seq',
   'singularity_img','docker_img',
-  'gatk_app','star_app','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
+  'gatk_app','star_app','star_index_params','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
   'java_options','window','queueSize','queue-size','account', 'threads'] as Set
 
 def parameter_diff = params.keySet() - parameters_valid
@@ -194,7 +196,8 @@ process STAR_index {
   --runThreadN $task.cpus \
   --runMode genomeGenerate \
   --genomeDir Genome/STAR_index \
-  --genomeFastaFiles $genome_fasta
+  --genomeFastaFiles $genome_fasta \
+  $star_index_params
   """
 }
 

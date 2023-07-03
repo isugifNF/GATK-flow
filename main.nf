@@ -209,7 +209,7 @@ process STAR_align {
   tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output:
-  tuple val("$readname"), path("results_twopass/${readname}_*.bam"), path("results_twopass/${readname}_*final.out") // bam? bai?
+  tuple val("$readname"), path("star_twopass_output/${readname}_*.bam"), path("star_twopass_output/${readname}_*final.out") // bam? bai?
 
   script:
   """

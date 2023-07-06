@@ -4,7 +4,6 @@ nextflow.enable.dsl=2
 
 include { FastqToSam;
           MarkIlluminaAdapters;
-          SamToFastq;
           CreateSequenceDictionary;
           MergeBamAlignment;
           samtools_faidx;
@@ -20,10 +19,12 @@ include { FastqToSam;
           VariantFiltration;
           keep_only_pass; } from './modules/GATK.nf'
 
-include { STAR_index;
+include { SamToFastq as SamToFastq_RNA;
+          STAR_index;
           STAR_align; } from './modules/RNAseq.nf'
 
-include { bwamem2_index;
+include { SamToFastq as SamToFastq_DNA
+          bwamem2_index;
           bwamem2_mem; } from './modules/DNAseq.nf'
 
 def helpMsg() {
@@ -130,12 +131,21 @@ workflow {
   i = 1
 
   // == Prepare mapped and unmapped read files
-  cleanreads_ch = reads_ch
+  if(params.seq == "dna"){
+    cleanreads_ch = reads_ch
     | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
     | FastqToSam
     | MarkIlluminaAdapters
-    | SamToFastq
+    | SamToFastq_DNA
     | map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
+  } else if( params.seq == "rna"){
+    cleanreads_ch = reads_ch
+    | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
+    | FastqToSam
+    | MarkIlluminaAdapters
+    | SamToFastq_RNA
+    | map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
+  }
 
   if(params.seq == "dna"){
     mapped_ch = genome_ch

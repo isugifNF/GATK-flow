@@ -1,6 +1,37 @@
 #! /usr/bin/env nextflow
 nextflow.enable.dsl=2
 
+process SamToFastq {
+  tag "${bam.fileName}"
+  label 'gatk'
+  publishDir "${params.outdir}/01_MarkAdapters/"
+
+  input:  // reads.bam
+  path(bam)
+
+  output: // reads_interleaved.fq
+  tuple val("${bam.simpleName}"), path("${bam.simpleName}_newR1.fq"), path("${bam.simpleName}_newR2.fq")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $gatk_app --java-options "${java_options}" SamToFastq \
+    --INPUT $bam \
+    --FASTQ ${bam.simpleName}_newR1.fq \
+    --SECOND_END_FASTQ ${bam.simpleName}_newR2.fq \
+    --VALIDATION_STRINGENCY SILENT \
+    --USE_JDK_DEFLATER true \
+    --USE_JDK_INFLATER true
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${bam.simpleName}_newR1.fq
+  touch ${bam.simpleName}_newR2.fq
+  """
+}
+
 process STAR_index {
   tag "${genome_fasta.simpleName}"
   label 'star'

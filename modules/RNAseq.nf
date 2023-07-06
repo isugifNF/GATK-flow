@@ -81,3 +81,36 @@ process STAR_align {
   # https://gatk.broadinstitute.org/hc/en-us/community/posts/15104189520283-STAR-and-GATK-RNAseq-based-SNP-detection
   """
 }
+
+process MergeBamAlignment {
+  tag "$i_readname"
+  label 'gatk'
+  publishDir "${params.outdir}/03_PrepGATK"
+
+  input:  // [readgroup, unmapped reads, mapped reads]
+  tuple val(i_readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_dict)
+
+  output: // merged bam and bai files
+  tuple path("${i_readname}_merged.bam"), path("${i_readname}_merged.bai")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $gatk_app --java-options "${java_options}" MergeBamAlignment \
+  --REFERENCE_SEQUENCE $genome_fasta \
+  --UNMAPPED_BAM ${read_unmapped} \
+  --ALIGNED_BAM ${read_mapped} \
+  --OUTPUT ${i_readname}_merged.bam \
+  --INCLUDE_SECONDARY_ALIGNMENTS true \
+  --VALIDATION_STRINGENCY SILENT \
+  --USE_JDK_DEFLATER true \
+  --USE_JDK_INFLATER true
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${i_readname}_merged.bam
+  touch ${i_readname}_merged.bai
+  """
+}

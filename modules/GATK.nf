@@ -91,45 +91,6 @@ process CreateSequenceDictionary {
   """
 }
 
-process MergeBamAlignment {
-  tag "$i_readname"
-  label 'gatk'
-  publishDir "${params.outdir}/03_PrepGATK"
-
-  input:  // [readgroup, unmapped reads, mapped reads]
-  tuple val(i_readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_dict)
-
-  output: // merged bam and bai files
-  tuple path("${i_readname}_merged.bam"), path("${i_readname}_merged.bai")
-
-  script:
-  """
-  #! /usr/bin/env bash
-  $gatk_app --java-options "${java_options}" MergeBamAlignment \
-  --REFERENCE_SEQUENCE $genome_fasta \
-  --UNMAPPED_BAM ${read_unmapped} \
-  --ALIGNED_BAM ${read_mapped} \
-  --OUTPUT ${i_readname}_merged.bam \
-  --CREATE_INDEX true \
-  --ADD_MATE_CIGAR true \
-  --CLIP_ADAPTERS false \
-  --CLIP_OVERLAPPING_READS true \
-  --INCLUDE_SECONDARY_ALIGNMENTS true \
-  --MAX_INSERTIONS_OR_DELETIONS -1 \
-  --PRIMARY_ALIGNMENT_STRATEGY MostDistant \
-  --ATTRIBUTES_TO_RETAIN XS \
-  --USE_JDK_DEFLATER true \
-  --USE_JDK_INFLATER true
-  """
-
-  stub:
-  """
-  #! /usr/bin/env bash
-  touch ${i_readname}_merged.bam
-  touch ${i_readname}_merged.bai
-  """
-}
-
 process samtools_faidx {
   tag "${genome_fasta.simpleName}"
   label 'samtools'

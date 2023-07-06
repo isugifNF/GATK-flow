@@ -5,7 +5,6 @@ nextflow.enable.dsl=2
 include { FastqToSam;
           MarkIlluminaAdapters;
           CreateSequenceDictionary;
-          MergeBamAlignment;
           samtools_faidx;
           bedtools_makewindows;
           gatk_HaplotypeCaller;
@@ -21,11 +20,13 @@ include { FastqToSam;
 
 include { SamToFastq as SamToFastq_RNA;
           STAR_index;
-          STAR_align; } from './modules/RNAseq.nf'
+          STAR_align;
+          MergeBamAlignment as MergeBamAlignment_RNA; } from './modules/RNAseq.nf'
 
 include { SamToFastq as SamToFastq_DNA
           bwamem2_index;
-          bwamem2_mem; } from './modules/DNAseq.nf'
+          bwamem2_mem; 
+          MergeBamAlignment as MergeBamAlignment_DNA; } from './modules/DNAseq.nf'
 
 def helpMsg() {
   log.info """
@@ -171,11 +172,20 @@ workflow {
 
   genome_ch 
     | (CreateSequenceDictionary & samtools_faidx )
-  unmapped_ch 
+
+  if (params.seq == "dna") {
+    unmapped_ch 
     | join(mapped_ch)
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
-    | MergeBamAlignment
+    | MergeBamAlignment_DNA
+  } else if (params.seq == 'rna' ) {
+    unmapped_ch 
+    | join(mapped_ch)
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | MergeBamAlignment_RNA
+  }
 
   if(params.invariant) {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?

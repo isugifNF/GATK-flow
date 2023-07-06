@@ -10,15 +10,15 @@ process SamToFastq {
   path(bam)
 
   output: // reads_interleaved.fq
-  tuple val("${bam.simpleName}"), path("${bam.simpleName}_newR1.fq"), path("${bam.simpleName}_newR2.fq")
+  tuple val("${bam.simpleName}"), path("${bam.simpleName}_newR1.fq.gz"), path("${bam.simpleName}_newR2.fq.gz")
 
   script:
   """
   #! /usr/bin/env bash
   $gatk_app --java-options "${java_options}" SamToFastq \
     --INPUT $bam \
-    --FASTQ ${bam.simpleName}_newR1.fq \
-    --SECOND_END_FASTQ ${bam.simpleName}_newR2.fq \
+    --FASTQ ${bam.simpleName}_newR1.fq.gz \
+    --SECOND_END_FASTQ ${bam.simpleName}_newR2.fq.gz \
     --VALIDATION_STRINGENCY SILENT \
     --USE_JDK_DEFLATER true \
     --USE_JDK_INFLATER true
@@ -27,8 +27,8 @@ process SamToFastq {
   stub:
   """
   #! /usr/bin/env bash
-  touch ${bam.simpleName}_newR1.fq
-  touch ${bam.simpleName}_newR2.fq
+  touch ${bam.simpleName}_newR1.fq.gz
+  touch ${bam.simpleName}_newR2.fq.gz
   """
 }
 
@@ -73,6 +73,7 @@ process STAR_align {
   --outFileNamePrefix star_twopass_output/${readname}_ \
   --genomeDir ${genome_index} \
   --readFilesIn $readpairs \
+  --readFilesCommand "gunzip -c" \
   --outSAMtype BAM SortedByCoordinate \
   --twopassMode Basic
 

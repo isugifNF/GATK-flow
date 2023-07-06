@@ -36,8 +36,7 @@ process STAR_index {
   tag "${genome_fasta.simpleName}"
   label 'star'
   publishDir "${params.outdir}/02_MapReads"
-  input:
-  path(genome_fasta)
+  input: tuple path(genome_fasta), path(gtf)
 
   output: // [genome.fasta, [genome_index files]]
   tuple path("$genome_fasta"), path("Genome/STAR_index")
@@ -50,6 +49,7 @@ process STAR_index {
   --runMode genomeGenerate \
   --genomeDir Genome/STAR_index \
   --genomeFastaFiles $genome_fasta \
+  --sjdbGTFfile $gtf \
   $star_index_params
   """
 }

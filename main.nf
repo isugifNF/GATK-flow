@@ -74,7 +74,7 @@ if(params.help){
 }
 
 def parameters_valid = ['help','outdir',
-  'genome','reads','reads_file','invariant','seq',
+  'genome','gtf','reads','reads_file','invariant','seq',
   'singularity_img','docker_img',
   'gatk_app','star_app','star_index_params','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
   'java_options','window','queueSize','queue-size','account', 'threads'] as Set
@@ -153,7 +153,10 @@ workflow {
     | combine(cleanreads_ch)
     | bwamem2_mem
   } else if( params.seq == "rna"){
+    gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
+
     mapped_ch = genome_ch
+    | combine(gtf_ch)
     | STAR_index
     | combine(cleanreads_ch)
     | STAR_align

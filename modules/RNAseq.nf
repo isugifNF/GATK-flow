@@ -104,7 +104,8 @@ process MergeBamAlignment {
   --INCLUDE_SECONDARY_ALIGNMENTS true \
   --VALIDATION_STRINGENCY SILENT \
   --USE_JDK_DEFLATER true \
-  --USE_JDK_INFLATER true
+  --USE_JDK_INFLATER true \
+  --CREATE_INDEX
   """
 
   stub:

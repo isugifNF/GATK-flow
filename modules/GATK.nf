@@ -66,7 +66,7 @@ process MarkIlluminaAdapters {
 }
 
 process CreateSequenceDictionary {
-  tag "${genome_fasta.simpleName}"
+  tag "${genome_fasta.baseName}"
   label 'gatk'
   publishDir "${params.outdir}/03_PrepGATK"
 
@@ -74,14 +74,14 @@ process CreateSequenceDictionary {
   path(genome_fasta)
 
   output:
-  path("${genome_fasta.simpleName}.dict")
+  path("${genome_fasta.baseName}.dict")
 
   script:
   """
   #! /usr/bin/env bash
   $gatk_app --java-options "${java_options}" CreateSequenceDictionary \
     -R ${genome_fasta} \
-    -O ${genome_fasta.simpleName}.dict
+    -O ${genome_fasta.baseName}.dict
   """
 
   stub:

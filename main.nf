@@ -174,13 +174,13 @@ workflow {
     | (CreateSequenceDictionary & samtools_faidx )
 
   if (params.seq == "dna") {
-    unmapped_ch 
+    MergeBamAlignment_ch = unmapped_ch 
     | join(mapped_ch)
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
     | MergeBamAlignment_DNA
   } else if (params.seq == 'rna' ) {
-    unmapped_ch 
+    MergeBamAlignment_ch = unmapped_ch 
     | join(mapped_ch)
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
@@ -190,12 +190,12 @@ workflow {
   if(params.invariant) {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
   } else {
-    allbai_ch = MergeBamAlignment.out
+    allbai_ch = MergeBamAlignment_ch
       | map { n -> n.getAt(1)}
       | collect 
       | map { n -> [n]}
 
-    allbambai_ch = MergeBamAlignment.out
+    allbambai_ch = MergeBamAlignment_ch
       | map { n -> n.getAt(0)}
       | collect
       | map { n -> [n]}

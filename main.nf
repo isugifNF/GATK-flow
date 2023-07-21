@@ -21,7 +21,8 @@ include { FastqToSam;
 include { SamToFastq as SamToFastq_RNA;
           STAR_index;
           STAR_align;
-          MergeBamAlignment as MergeBamAlignment_RNA; } from './modules/RNAseq.nf'
+          MergeBamAlignment as MergeBamAlignment_RNA; 
+          MarkDuplicates; } from './modules/RNAseq.nf'
 
 include { SamToFastq as SamToFastq_DNA
           bwamem2_index;
@@ -190,16 +191,30 @@ workflow {
   if(params.invariant) {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
   } else {
-    allbai_ch = MergeBamAlignment_ch
+    if(params.seq == 'dna') {
+      allbai_ch = MergeBamAlignment_ch
       | map { n -> n.getAt(1)}
       | collect 
       | map { n -> [n]}
 
-    allbambai_ch = MergeBamAlignment_ch
+      allbambai_ch = MergeBamAlignment_ch
       | map { n -> n.getAt(0)}
       | collect
       | map { n -> [n]}
       | combine(allbai_ch)
+    } else if (params.seq == 'rna') {
+      allbai_ch = MergeBamAlignment_ch
+      | MarkDuplicates
+      | map { n -> n.getAt(1)}
+      | collect 
+      | map { n -> [n]}
+
+      allbambai_ch = MarkDuplicates.out
+      | map { n -> n.getAt(0)}
+      | collect
+      | map { n -> [n]}
+      | combine(allbai_ch)
+    }
   }
 
   // == Run Gatk Haplotype by interval window

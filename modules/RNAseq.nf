@@ -89,6 +89,7 @@ process MergeBamAlignment {
 
   input:  // [readgroup, unmapped reads, mapped reads]
   tuple val(i_readname), path(read_unmapped), path(read_mapped), path(genome_fasta), path(genome_dict)
+
   output: // merged bam and bai files
   tuple val("${i_readname}"), path("${i_readname}_merged.bam"), path("${i_readname}_merged.bai")
 
@@ -125,7 +126,7 @@ process MarkDuplicates {
   tuple val(i_readname), path(merge_bam), path(merge_bai)
 
   output: // merged bam and bai files
-  tuple path("${i_readname}_markduplicates.bam"), path("${i_readname}_markduplicates.bai")
+  tuple val("${i_readname}"), path("${i_readname}_markduplicates.bam"), path("${i_readname}_markduplicates.bai")
 
   script:
   """
@@ -137,4 +138,25 @@ process MarkDuplicates {
        --VALIDATION_STRINGENCY SILENT \
        --METRICS_FILE ${i_readname}_markduplicates.metrics
   """
+}
+
+process SplitNCigarReads {
+  tag "$i_readname"
+  label 'gatk'
+  publishDir "${params.outdir}/03_PrepGATK"
+
+  input:  // [readgroup, genome, markduplicates bam, markduplicates index]
+  tuple val(i_readname), path(markdup_bam), path(markdup_bai), path(genome_fasta), path(samtools_faidx), path(genome_dict)
+
+  output: // splitncigarreads bam and bai files
+  tuple val("${i_readname}"), path("${i_readname}_splitncigarreads.bam"), path("${i_readname}_splitncigarreads.bai")
+
+  script:
+  """
+  ${gatk_app} \
+   SplitNCigarReads \
+   -R ${genome_fasta} \
+   -I ${markdup_bam} \
+   -O ${i_readname}_splitncigarreads.bam
+   """
 }

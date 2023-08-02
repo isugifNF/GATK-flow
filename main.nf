@@ -22,7 +22,8 @@ include { SamToFastq as SamToFastq_RNA;
           STAR_index;
           STAR_align;
           MergeBamAlignment as MergeBamAlignment_RNA; 
-          MarkDuplicates; } from './modules/RNAseq.nf'
+          MarkDuplicates; 
+          SplitNCigarReads; } from './modules/RNAseq.nf'
 
 include { SamToFastq as SamToFastq_DNA
           bwamem2_index;
@@ -203,14 +204,20 @@ workflow {
       | map { n -> [n]}
       | combine(allbai_ch)
     } else if (params.seq == 'rna') {
-      allbai_ch = MergeBamAlignment_ch
+      MergeBamAlignment_ch
       | MarkDuplicates
-      | map { n -> n.getAt(1)}
+      | combine(genome_ch)
+      | combine(samtools_faidx.out)
+      | combine(CreateSequenceDictionary.out)
+      | SplitNCigarReads
+
+      allbai_ch = SplitNCigarReads.out
+      | map { n -> n.getAt(2)}
       | collect 
       | map { n -> [n]}
 
-      allbambai_ch = MarkDuplicates.out
-      | map { n -> n.getAt(0)}
+      allbambai_ch = SplitNCigarReads.out
+      | map { n -> n.getAt(1)}
       | collect
       | map { n -> [n]}
       | combine(allbai_ch)
@@ -225,7 +232,12 @@ workflow {
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
     | combine(samtools_faidx.out)
-
+  if(params.seq == 'rna'){
+    part1_reads = MarkDuplicates.out
+    | combine(samtools_faidx.out)
+  } else {
+    part1_reads = part1_ch
+  }
   // If invariant, stop at output.vcf (all sites). If not, only keep SNPs with SNP filtering.
   if(params.invariant){
 

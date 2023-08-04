@@ -7,8 +7,6 @@ include { FastqToSam;
           CreateSequenceDictionary;
           samtools_faidx;
           bedtools_makewindows;
-          gatk_HaplotypeCaller;
-          gatk_HaplotypeCaller_invariant;
           CombineGVCFs;
           GenotypeGVCFs;
           merge_vcf;
@@ -23,12 +21,15 @@ include { SamToFastq as SamToFastq_RNA;
           STAR_align;
           MergeBamAlignment as MergeBamAlignment_RNA; 
           MarkDuplicates; 
-          SplitNCigarReads; } from './modules/RNAseq.nf'
+          SplitNCigarReads;
+          gatk_HaplotypeCaller as gatk_HaplotypeCaller_RNA; } from './modules/RNAseq.nf'
 
 include { SamToFastq as SamToFastq_DNA
           bwamem2_index;
           bwamem2_mem; 
-          MergeBamAlignment as MergeBamAlignment_DNA; } from './modules/DNAseq.nf'
+          MergeBamAlignment as MergeBamAlignment_DNA;
+          gatk_HaplotypeCaller as gatk_HaplotypeCaller_DNA;
+          gatk_HaplotypeCaller_invariant; } from './modules/DNAseq.nf'
 
 def helpMsg() {
   log.info """
@@ -232,16 +233,22 @@ workflow {
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
     | combine(samtools_faidx.out)
-  if(params.seq == 'rna'){
-    part1_reads = MarkDuplicates.out
-    | combine(samtools_faidx.out)
-  } else {
+  if(params.seq == 'dna'){
     part1_reads = part1_ch
+  } else {
+    def split_outputs_ch = SplitNCigarReads.out.map { n -> [n[1], n[2]] }
+    part1_reads = bedtools_makewindows.out
+    | view
+    | splitText(){it.trim()}
+    | combine(split_outputs_ch)
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | combine(samtools_faidx.out)
   }
   // If invariant, stop at output.vcf (all sites). If not, only keep SNPs with SNP filtering.
   if(params.invariant){
 
-    part2_ch = part1_ch
+    part2_ch = part1_reads
       | gatk_HaplotypeCaller_invariant
       | collect
       | map { n -> [n] }
@@ -255,9 +262,16 @@ workflow {
       | GenotypeGVCFs
 
   }else{
+      if(params.seq == "dna") {
+        call_ch = part1_reads
+        | gatk_HaplotypeCaller_DNA
+      } else {
+        call_ch = part1_reads
+        | take(3)
+        | gatk_HaplotypeCaller_RNA
+      }
 
-    part2_ch = part1_ch
-      | gatk_HaplotypeCaller
+    part2_ch = call_ch
       | collect
       | merge_vcf
       | vcftools_snp_only

@@ -160,3 +160,34 @@ process SplitNCigarReads {
    -O ${i_readname}_splitncigarreads.bam
    """
 }
+
+process gatk_HaplotypeCaller {
+  tag "$window"
+  label 'gatk'
+  clusterOptions = "-N 1 -n 36 -t 01:00:00"
+  publishDir "${params.outdir}/04_GATK", mode: 'copy'
+  errorStrategy 'retry'
+  maxRetries 3
+
+  input:  // [window, reads files ..., genome files ...]
+  tuple val(window), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
+
+  output: // identified SNPs as a vcf file
+  path("*.vcf")
+
+  script: 
+  """
+  #! /usr/bin/env bash
+  BAMFILES=`echo $bam | sed 's/ / -I /g' | tr '[' ' ' | tr ']' ' '`
+  WIND=`echo $window | sed 's/:/_/'`
+  $gatk_app --java-options "${java_options}" HaplotypeCaller \
+   -R $genome_fasta \
+   -I \$BAMFILES \
+   -L $window \
+   --output \${WIND}.vcf
+  """
+  stub:
+  """
+  # touch ${window.replace(':','_')}.vcf
+  """
+}

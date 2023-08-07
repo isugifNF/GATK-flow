@@ -238,7 +238,6 @@ workflow {
   } else {
     def split_outputs_ch = SplitNCigarReads.out.map { n -> [n[1], n[2]] }
     part1_reads = bedtools_makewindows.out
-    | view
     | splitText(){it.trim()}
     | combine(split_outputs_ch)
     | combine(genome_ch)
@@ -268,6 +267,7 @@ workflow {
       } else {
         call_ch = part1_reads
         | take(3)
+        | view
         | gatk_HaplotypeCaller_RNA
       }
 

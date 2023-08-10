@@ -211,19 +211,21 @@ process merge_vcf {
   path(vcfs)
 
   output: // merged into one vcf file
-  path("first-round_merged.vcf")
+  path("first_round_merged.vcf")
 
   script:
   """
   #! /usr/bin/env bash
-  cat ${vcfs.getAt(0)} | grep "^#" > first-round_merged.vcf
-  cat ${vcfs} | grep -v "^#" >> first-round_merged.vcf
+  set -euv
+  
+  cat ${vcfs.getAt(0)} | grep "^#" > first_round_merged.vcf
+  cat ${vcfs} | grep -v "^#" >> first_round_merged.vcf
   """
 
   stub:
   """
   #! /usr/bin/env bash
-  touch first-round_merged.vcf
+  touch first_round_merged.vcf
   """
 }
 

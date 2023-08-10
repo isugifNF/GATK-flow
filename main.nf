@@ -60,6 +60,7 @@ def helpMsg() {
     --vcftools_app          Link to vcftools executable [default: '$vcftools_app']
 
     --star_index_param      Parameters to pass to STAR index [default:'${params.star_index_param}']
+    --star_index_file       Optional: speedup by providing a prebuilt STAR indexed genome [default: '${params.star_index_file}']
 
    Optional other arguments:
     --java_options          Java options for gatk [default:'${java_options}']
@@ -80,7 +81,7 @@ if(params.help){
 def parameters_valid = ['help','outdir',
   'genome','gtf','reads','reads_file','invariant','seq',
   'singularity_img','docker_img',
-  'gatk_app','star_app','star_index_params','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
+  'gatk_app','star_app','star_index_params','star_index_file','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
   'java_options','window','queueSize','queue-size','account', 'threads'] as Set
 
 def parameter_diff = params.keySet() - parameters_valid
@@ -159,16 +160,19 @@ workflow {
   } else if( params.seq == "rna"){
     gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
 
-    mapped_ch = genome_ch
-    | combine(gtf_ch)
-    | STAR_index
+    if(params.star_index_file){
+      star_index_ch = channel.fromFile(params.star_index_file, checkIfExists:true)
+    } else {
+      star_index_ch = genome_ch
+       | combine(gtf_ch)
+       | STAR_index
+    }
+
+    mapped_ch = star_index_ch
     | combine(cleanreads_ch)
     | STAR_align
     | map { n -> [ n.getAt(0), n.getAt(1)]}
   }
-
-  // mapped_ch = bwamem2_mem.out // probably change this to aligned_ch
-  //   | map { n -> [n.simpleName.replaceFirst("_mapped",""), n] }
 
   unmapped_ch = MarkIlluminaAdapters.out
     | map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
@@ -266,8 +270,6 @@ workflow {
         | gatk_HaplotypeCaller_DNA
       } else {
         call_ch = part1_reads
-        | take(3)
-        | view
         | gatk_HaplotypeCaller_RNA
       }
 

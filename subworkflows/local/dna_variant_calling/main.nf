@@ -14,14 +14,14 @@ include { FastqToSam;
           SortVcf;
           calc_DPvalue;
           VariantFiltration;
-          keep_only_pass; } from '../../../modules/GATK.nf'
+          keep_only_pass; } from '../../../modules/local/GATK.nf'
 
 include { SamToFastq as SamToFastq_DNA
           bwamem2_index;
           bwamem2_mem; 
           MergeBamAlignment as MergeBamAlignment_DNA;
           gatk_HaplotypeCaller as gatk_HaplotypeCaller_DNA;
-          gatk_HaplotypeCaller_invariant; } from '../../../modules/DNAseq.nf'
+          gatk_HaplotypeCaller_invariant; } from '../../../modules/local/DNAseq.nf'
 
 workflow DNA_VARIANT_CALLING {
   take:

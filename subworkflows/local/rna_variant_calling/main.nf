@@ -14,7 +14,7 @@ include { FastqToSam;
           SortVcf;
           calc_DPvalue;
           VariantFiltration;
-          keep_only_pass; } from '../../../modules/GATK.nf'
+          keep_only_pass; } from '../../../modules/local/GATK.nf'
 
 include { SamToFastq as SamToFastq_RNA;
           STAR_index;
@@ -22,7 +22,7 @@ include { SamToFastq as SamToFastq_RNA;
           MergeBamAlignment as MergeBamAlignment_RNA; 
           MarkDuplicates; 
           SplitNCigarReads;
-          gatk_HaplotypeCaller as gatk_HaplotypeCaller_RNA; } from '../../../modules/RNAseq.nf'
+          gatk_HaplotypeCaller as gatk_HaplotypeCaller_RNA; } from '../../../modules/local/RNAseq.nf'
 
 workflow RNA_VARIANT_CALLING {
   take:

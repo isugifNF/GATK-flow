@@ -2,34 +2,9 @@
 
 nextflow.enable.dsl=2
 
-include { FastqToSam;
-          MarkIlluminaAdapters;
-          CreateSequenceDictionary;
-          samtools_faidx;
-          bedtools_makewindows;
-          CombineGVCFs;
-          GenotypeGVCFs;
-          merge_vcf;
-          vcftools_snp_only;
-          SortVcf;
-          calc_DPvalue;
-          VariantFiltration;
-          keep_only_pass; } from './modules/GATK.nf'
+include { DNA_VARIANT_CALLING } from './subworkflows/local/dna_variant_calling/main.nf'
 
-include { SamToFastq as SamToFastq_RNA;
-          STAR_index;
-          STAR_align;
-          MergeBamAlignment as MergeBamAlignment_RNA; 
-          MarkDuplicates; 
-          SplitNCigarReads;
-          gatk_HaplotypeCaller as gatk_HaplotypeCaller_RNA; } from './modules/RNAseq.nf'
-
-include { SamToFastq as SamToFastq_DNA
-          bwamem2_index;
-          bwamem2_mem; 
-          MergeBamAlignment as MergeBamAlignment_DNA;
-          gatk_HaplotypeCaller as gatk_HaplotypeCaller_DNA;
-          gatk_HaplotypeCaller_invariant; } from './modules/DNAseq.nf'
+include { RNA_VARIANT_CALLING } from './subworkflows/local/rna_variant_calling/main.nf'
 
 def helpMsg() {
   log.info """
@@ -89,28 +64,6 @@ if (parameter_diff.size() != 0){
    exit 1, "[Pipeline error] Parameter(s) $parameter_diff is(are) not valid in the pipeline!\n"
 }
 
-
-// if(!params.genome) {
-//   log.info"""
-// #===============
-//   ERROR: --genome GENOME.fasta    A reference genome file is required!
-// #===============
-//   """
-//   helpMsg()
-//   exit 0
-// }
-// 
-// if(!params.reads & !params.reads_file){
-//   log.info"""
-// #===============
-//   ERROR: --reads "*_{r1,r2}.fq.gz"     Paired-end read files are required! Either as a glob or as a tab-delimited text file
-//          --reads_file READS_FILE.txt
-// #===============
-//   """
-//   helpMsg()
-//   exit 0
-// }
-
 workflow {
   // == Read in genome and reads channels
   if(params.genome) {
@@ -132,163 +85,10 @@ workflow {
     exit 1, "[Missing File(s) Error] This pipeline requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
   }
 
-  // == Since one sample may be run on multiple lanes
-  i = 1
-
-  // == Prepare mapped and unmapped read files
-  if(params.seq == "dna"){
-    cleanreads_ch = reads_ch
-    | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
-    | FastqToSam
-    | MarkIlluminaAdapters
-    | SamToFastq_DNA
-    | map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
-  } else if( params.seq == "rna"){
-    cleanreads_ch = reads_ch
-    | map { n -> [n.getAt(0), n.getAt(1), "${i++}_"+n.getAt(0)] }
-    | FastqToSam
-    | MarkIlluminaAdapters
-    | SamToFastq_RNA
-    | map { n -> [ n.getAt(0).replaceFirst("_marked",""), [ n.getAt(1), n.getAt(2)] ] }
-  }
-
-  if(params.seq == "dna"){
-    mapped_ch = genome_ch
-    | bwamem2_index
-    | combine(cleanreads_ch)
-    | bwamem2_mem
-  } else if( params.seq == "rna"){
+  if (params.seq == "dna"){
+    DNA_VARIANT_CALLING(genome_ch, reads_ch)
+  } else if (params.seq == "rna") {
     gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
-
-    if(params.star_index_file){
-      star_index_ch = channel.fromFile(params.star_index_file, checkIfExists:true)
-    } else {
-      star_index_ch = genome_ch
-       | combine(gtf_ch)
-       | STAR_index
-    }
-
-    mapped_ch = star_index_ch
-    | combine(cleanreads_ch)
-    | STAR_align
-    | map { n -> [ n.getAt(0), n.getAt(1)]}
+    RNA_VARIANT_CALLING(genome_ch, reads_ch, gtf_ch)    
   }
-
-  unmapped_ch = MarkIlluminaAdapters.out
-    | map { n -> [n.simpleName.replaceFirst("_marked",""), n] }
-
-  genome_ch 
-    | (CreateSequenceDictionary & samtools_faidx )
-
-  if (params.seq == "dna") {
-    MergeBamAlignment_ch = unmapped_ch 
-    | join(mapped_ch)
-    | combine(genome_ch)
-    | combine(CreateSequenceDictionary.out)
-    | MergeBamAlignment_DNA
-  } else if (params.seq == 'rna' ) {
-    MergeBamAlignment_ch = unmapped_ch 
-    | join(mapped_ch)
-    | combine(genome_ch)
-    | combine(CreateSequenceDictionary.out)
-    | MergeBamAlignment_RNA
-  }
-
-  if(params.invariant) {
-    allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
-  } else {
-    if(params.seq == 'dna') {
-      allbai_ch = MergeBamAlignment_ch
-      | map { n -> n.getAt(1)}
-      | collect 
-      | map { n -> [n]}
-
-      allbambai_ch = MergeBamAlignment_ch
-      | map { n -> n.getAt(0)}
-      | collect
-      | map { n -> [n]}
-      | combine(allbai_ch)
-    } else if (params.seq == 'rna') {
-      MergeBamAlignment_ch
-      | MarkDuplicates
-      | combine(genome_ch)
-      | combine(samtools_faidx.out)
-      | combine(CreateSequenceDictionary.out)
-      | SplitNCigarReads
-
-      allbai_ch = SplitNCigarReads.out
-      | map { n -> n.getAt(2)}
-      | collect 
-      | map { n -> [n]}
-
-      allbambai_ch = SplitNCigarReads.out
-      | map { n -> n.getAt(1)}
-      | collect
-      | map { n -> [n]}
-      | combine(allbai_ch)
-    }
-  }
-
-  // == Run Gatk Haplotype by interval window
-  part1_ch = samtools_faidx.out
-    | bedtools_makewindows
-    | splitText(){it.trim()}
-    | combine(allbambai_ch)
-    | combine(genome_ch)
-    | combine(CreateSequenceDictionary.out)
-    | combine(samtools_faidx.out)
-  if(params.seq == 'dna'){
-    part1_reads = part1_ch
-  } else {
-    def split_outputs_ch = SplitNCigarReads.out.map { n -> [n[1], n[2]] }
-    part1_reads = bedtools_makewindows.out
-    | splitText(){it.trim()}
-    | combine(split_outputs_ch)
-    | combine(genome_ch)
-    | combine(CreateSequenceDictionary.out)
-    | combine(samtools_faidx.out)
-  }
-  // If invariant, stop at output.vcf (all sites). If not, only keep SNPs with SNP filtering.
-  if(params.invariant){
-
-    part2_ch = part1_reads
-      | gatk_HaplotypeCaller_invariant
-      | collect
-      | map { n -> [n] }
-      | combine(genome_ch)
-      | combine(CreateSequenceDictionary.out)
-      | combine(samtools_faidx.out)
-      | CombineGVCFs
-      | combine(genome_ch)
-      | combine(CreateSequenceDictionary.out)
-      | combine(samtools_faidx.out)
-      | GenotypeGVCFs
-
-  }else{
-      if(params.seq == "dna") {
-        call_ch = part1_reads
-        | gatk_HaplotypeCaller_DNA
-      } else {
-        call_ch = part1_reads
-        | gatk_HaplotypeCaller_RNA
-      }
-
-    part2_ch = call_ch
-      | collect
-      | merge_vcf
-      | vcftools_snp_only
-      | combine(CreateSequenceDictionary.out)
-      | SortVcf
-      | calc_DPvalue
-
-    // == Filter resulting SNPs
-    SortVcf.out
-      | combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")})
-      | combine(genome_ch)
-      | combine(CreateSequenceDictionary.out)
-      | combine(samtools_faidx.out)
-      | VariantFiltration
-      | keep_only_pass
-  }
-
 }

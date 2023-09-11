@@ -52,6 +52,13 @@ process STAR_index {
   --sjdbGTFfile $gtf \
   $star_index_params
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  mkdir -p Genome/STAR_index
+  touch Genome/STAR_index/Genome
+  """
 }
 
 process STAR_align {
@@ -79,6 +86,14 @@ process STAR_align {
 
   # Another option
   # https://gatk.broadinstitute.org/hc/en-us/community/posts/15104189520283-STAR-and-GATK-RNAseq-based-SNP-detection
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  mkdir -p star_twopass_output
+  touch star_twopass_output/${readname}_Aligned.sortedByCoord.out.bam
+  touch star_twopass_output/${readname}_Log.final.out
   """
 }
 
@@ -138,6 +153,13 @@ process MarkDuplicates {
        --VALIDATION_STRINGENCY SILENT \
        --METRICS_FILE ${i_readname}_markduplicates.metrics
   """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${i_readname}_markduplicates.bam
+  touch ${i_readname}_markduplicates.bai
+  """
 }
 
 process SplitNCigarReads {
@@ -158,7 +180,14 @@ process SplitNCigarReads {
    -R ${genome_fasta} \
    -I ${markdup_bam} \
    -O ${i_readname}_splitncigarreads.bam
-   """
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${i_readname}_splitncigarreads.bam
+  touch ${i_readname}_splitncigarreads.bai
+  """
 }
 
 process gatk_HaplotypeCaller {
@@ -186,6 +215,7 @@ process gatk_HaplotypeCaller {
    -L $window \
    --output \${WIND}.vcf
   """
+  
   stub:
   """
   # touch ${window.replace(':','_')}.vcf

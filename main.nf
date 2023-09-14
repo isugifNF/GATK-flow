@@ -6,6 +6,8 @@ include { DNA_VARIANT_CALLING } from './subworkflows/local/dna_variant_calling/m
 
 include { RNA_VARIANT_CALLING } from './subworkflows/local/rna_variant_calling/main.nf'
 
+include { LONGREAD_VARIANT_CALLING } from './subworkflows/local/long_read_variant_calling/main.nf'
+
 def helpMsg() {
   log.info """
    Usage:
@@ -90,5 +92,7 @@ workflow {
   } else if (params.seq == "rna") {
     gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
     RNA_VARIANT_CALLING(genome_ch, reads_ch, gtf_ch)    
+  } else if (params.seq == "longread") {
+    LONGREAD_VARIANT_CALLING(genome_ch, reads_ch)
   }
 }

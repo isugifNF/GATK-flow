@@ -52,6 +52,7 @@ process pbmm2_align {
   """
   #! /usr/bin/env bash
   touch ${readname}_mapped.bam
+  touch ${readname}_mapped.bam.bai
   """
 }
 
@@ -64,7 +65,7 @@ process gatk_HaplotypeCaller {
   maxRetries 3
 
   input:  // [window, reads files ..., genome files ...]
-  tuple path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
+  tuple val(read_name), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // identified SNPs as a vcf file
   path("*_gvcf.gz")
@@ -75,13 +76,13 @@ process gatk_HaplotypeCaller {
   $gatk_app --java-options "${java_options}" HaplotypeCaller \
     -R $genome_fasta \
     -I ${bam} \
-    -O ${bam.simplename}_gvcf.gz \
+    -O ${bam.simpleName}_gvcf.gz \
     -ERC GVCF
   """
 
   stub:
   """
-  touch ${bam.simplename}_gvcf.gz
+  touch ${bam.simpleName}_gvcf.gz
   """
 }
 
@@ -142,7 +143,7 @@ process GenotypeGVCFs {
 }
 
 process calc_DPvalue {
-  tag "$sorted_vcf.fileName"
+  tag "${vcf_gz.fileName}"
   label 'datamash'
 
   input:  // sorted SNP vcf
@@ -168,14 +169,14 @@ process calc_DPvalue {
 }
 
 process VariantFiltration {
-  tag "$sorted_snp_vcf.fileName"
+  tag "${vcf_gz.fileName}"
   publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:  // [sorted snp vcf, DP filter, genome files ... ]
   tuple path(vcf_gz), val(dp), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // filtered to identified SNP variants
-  path("${sorted_snp_vcf.simpleName}.marked.vcf")
+  path("${vcf_gz.simpleName}.marked.vcf")
 
   script:
   """
@@ -186,13 +187,13 @@ process VariantFiltration {
     --variant $vcf_gz \
     --filter-expression \"QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || DP > $dp\" \
     --filter-name "FAIL" \
-    --output ${sorted_snp_vcf.simpleName}.marked.vcf
+    --output ${vcf_gz.simpleName}.marked.vcf
   """
 
   stub:
   """
   #! /usr/bin/env bash
-  touch ${sorted_snp_vcf.simpleName}.marked.vcf
+  touch ${vcf_gz.simpleName}.marked.vcf
   """
 }
 

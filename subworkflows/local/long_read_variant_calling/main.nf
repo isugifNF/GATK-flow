@@ -13,7 +13,7 @@ include { pbmm2_index;
           CombineGVCFs as CombineGVCFs_LongRead;
           GenotypeGVCFs as GenotypeGVCFs_LongRead;
           calc_DPvalue as calc_DPvalue_LongRead;
-          VariantFiltration as VariantFiltration_LongRead } from '../../../modules/local/longReadseq.nf'
+          VariantFiltration as VariantFiltration_LongRead } from '../../../modules/local/LongReadseq.nf'
 
 include { MarkDuplicates as MarkDuplicates_RNA; } from '../../../modules/local/RNAseq.nf'
 
@@ -31,7 +31,7 @@ workflow LONGREAD_VARIANT_CALLING {
 
   // == Prepare mapped and unmapped read files
   cleanreads_ch = reads_ch
-    | map { n -> ["${i++}_"+n.basename, n] }
+    | map { n -> ["${i++}_"+n.baseName, n] }
 
   genome_ch 
     | (CreateSequenceDictionary & samtools_faidx )
@@ -64,7 +64,7 @@ workflow LONGREAD_VARIANT_CALLING {
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
     | combine(samtools_faidx.out)
-    | VariantFiltration
+    | VariantFiltration_LongRead
     | keep_only_pass
 
   emit:

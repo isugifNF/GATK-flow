@@ -218,6 +218,6 @@ process gatk_HaplotypeCaller {
   
   stub:
   """
-  # touch ${window.replace(':','_')}.vcf
+  touch ${window.replace(':','_')}.vcf
   """
 }

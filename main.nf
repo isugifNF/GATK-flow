@@ -23,6 +23,7 @@ def helpMsg() {
     --reads_file            Text file (tab delimited) with three columns [readname left_fastq.gz right_fastq.gz]. Will need full path for files.
 
     --invariant             Output invariant sites [default:false]
+    --long_reads            Long read file in fastq.gz format, will need to specify glob (e.g. "*.fastq.gz")
 
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
@@ -56,7 +57,7 @@ if(params.help){
 }
 
 def parameters_valid = ['help','outdir',
-  'genome','gtf','reads','reads_file','invariant','seq',
+  'genome','gtf','reads','reads_file','long_reads','invariant','seq',
   'singularity_img','docker_img',
   'gatk_app','star_app','star_index_params','star_index_file','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
   'java_options','window','queueSize','queue-size','account', 'threads'] as Set
@@ -85,7 +86,7 @@ workflow {
       | view {files -> "Read files : $files "}
   } else if (params.long_reads) {
     reads_ch = channel.fromPath(params.long_reads, checkIfExists:true)
-      | view { files -> "Long read file : $file " }
+      | view { files -> "Long read file : $files " }
   } else {
     exit 1, "[Missing File(s) Error] This pipeline requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
   }
@@ -93,7 +94,12 @@ workflow {
   if (params.seq == "dna"){
     DNA_VARIANT_CALLING(genome_ch, reads_ch)
   } else if (params.seq == "rna") {
-    gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
+    if(params.gtf) {
+      gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
+    }else{
+      exit 1, "[Missing File(s) Error] This pipeline requires a gtf file '--gtf [GENOME.gtf]' \n"
+    }
+    
     RNA_VARIANT_CALLING(genome_ch, reads_ch, gtf_ch)    
   } else if (params.seq == "longread") {
     LONGREAD_VARIANT_CALLING(genome_ch, reads_ch)

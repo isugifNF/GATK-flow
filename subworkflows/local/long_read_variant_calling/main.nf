@@ -4,18 +4,16 @@ nextflow.enable.dsl=2
 
 include { CreateSequenceDictionary;
           samtools_faidx;
-          bedtools_makewindows;
-          CombineGVCFs;
-          GenotypeGVCFs;
-          SortVcf;
           calc_DPvalue;
-          VariantFiltration;
           keep_only_pass; } from '../../../modules/local/GATK.nf'
 
 include { pbmm2_index; 
           pbmm2_align;
           gatk_HaplotypeCaller as gatk_HaplotypeCaller_LongRead;
-          CombineGVCFs as CombineGVCFs_LongRead; } from '../../../modules/local/longReadseq.nf'
+          CombineGVCFs as CombineGVCFs_LongRead;
+          GenotypeGVCFs as GenotypeGVCFs_LongRead;
+          calc_DPvalue as calc_DPvalue_LongRead;
+          VariantFiltration as VariantFiltration_LongRead } from '../../../modules/local/longReadseq.nf'
 
 include { MarkDuplicates as MarkDuplicates_RNA; } from '../../../modules/local/RNAseq.nf'
 
@@ -58,16 +56,16 @@ workflow LONGREAD_VARIANT_CALLING {
     | combine(samtools_faidx.out)
     | GenotypeGVCFs_LongRead
 
-    CombineGVCFs_LongRead.out
-      | calc_DPvalue_LongRead
+  CombineGVCFs_LongRead.out
+    | calc_DPvalue_LongRead
 
-    vcf_out_ch = GenotypeGVCFs_LongRead.out
-      | combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")})
-      | combine(genome_ch)
-      | combine(CreateSequenceDictionary.out)
-      | combine(samtools_faidx.out)
-      | VariantFiltration
-      | keep_only_pass
+  vcf_out_ch = GenotypeGVCFs_LongRead.out
+    | combine(calc_DPvalue_LongRead.out.map{n-> n.replaceAll("\n","")})
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | combine(samtools_faidx.out)
+    | VariantFiltration
+    | keep_only_pass
 
   emit:
   vcf = vcf_out_ch

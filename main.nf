@@ -83,6 +83,9 @@ workflow {
       | splitCsv(sep:'\t')
       | map { n -> [ n.getAt(0), [n.getAt(1), n.getAt(2)]] }
       | view {files -> "Read files : $files "}
+  } else if (params.long_reads) {
+    reads_ch = channel.fromPath(params.long_reads, checkIfExists:true)
+      | view { files -> "Long read file : $file " }
   } else {
     exit 1, "[Missing File(s) Error] This pipeline requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
   }

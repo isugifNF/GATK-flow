@@ -167,10 +167,32 @@ process calc_DPvalue {
   """
 }
 
-gatk VariantFiltration \
-  -R data/ecoli.fasta \
-  -V 03_variant_calls/output.vcf.gz \
-  -O 03_variant_calls/output.filtered.vcf \
-  --filter-expression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || DP > 9" \
-  --filter-name "my_filter"
+process VariantFiltration {
+  tag "$sorted_snp_vcf.fileName"
+  publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
+
+  input:  // [sorted snp vcf, DP filter, genome files ... ]
+  tuple path(vcf_gz), val(dp), path(genome_fasta), path(genome_dict), path(genome_fai)
+
+  output: // filtered to identified SNP variants
+  path("${sorted_snp_vcf.simpleName}.marked.vcf")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $gatk_app --java-options "${java_options}" VariantFiltration \
+    --reference $genome_fasta \
+    --sequence-dictionary $genome_dict \
+    --variant $vcf_gz \
+    --filter-expression \"QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || DP > $dp\" \
+    --filter-name "FAIL" \
+    --output ${sorted_snp_vcf.simpleName}.marked.vcf
+  """
+
+  stub:
+  """
+  #! /usr/bin/env bash
+  touch ${sorted_snp_vcf.simpleName}.marked.vcf
+  """
+}
 

@@ -28,6 +28,7 @@ def helpMsg() {
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
+    --container_img         Container image used for singularity and docker [default:'${params.container_img}']
     --singularity_img       Singularity image if [-profile singularity] is set [default:'${params.singularity_img}']
     --docker_img            Docker image if [-profile docker] is set [default:'${params.docker_img}']
     --gatk_app              Link to gatk executable [default: '$gatk_app']
@@ -58,7 +59,7 @@ if(params.help){
 
 def parameters_valid = ['help','outdir',
   'genome','gtf','reads','reads_file','long_reads','invariant','seq',
-  'singularity_img','docker_img',
+  'singularity_img','docker_img','container_img',
   'gatk_app','star_app','star_index_params','star_index_file','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
   'java_options','window','queueSize','queue-size','account', 'threads'] as Set
 

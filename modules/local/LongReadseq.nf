@@ -44,7 +44,7 @@ process pbmm2_align {
     ${reads} \
     ${readname}_mapped.bam \
     --preset CCS \
-    --sort \ 
+    --sort \
     --rg '@RG\tID:ZP\tSM:zapped'
   """
 
@@ -58,17 +58,16 @@ process pbmm2_align {
 
 process gatk_HaplotypeCaller {
   tag "$bam"
-  label 'gatk'
-  clusterOptions = "-N 1 -n 36 -t 01:00:00"
+  label 'gatk_long'
   publishDir "${params.outdir}/04_GATK", mode: 'copy'
   errorStrategy 'retry'
   maxRetries 3
 
   input:  // [window, reads files ..., genome files ...]
-  tuple val(read_name), path(bam), path(bai), path(genome_fasta), path(genome_dict), path(genome_fai)
+  tuple val(read_name), path(bam), path(bai), val(window), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // identified SNPs as a vcf file
-  path("*_gvcf.gz")
+  tuple path("*_gvcf.gz"), path("*_gvcf.gz.tbi")
 
   script:
   """
@@ -76,7 +75,7 @@ process gatk_HaplotypeCaller {
   $gatk_app --java-options "${java_options}" HaplotypeCaller \
     -R $genome_fasta \
     -I ${bam} \
-    -O ${bam.simpleName}_gvcf.gz \
+    -O ${bam.simpleName}_${window.replace(':','_')}_gvcf.gz \
     -ERC GVCF
   """
 
@@ -92,10 +91,10 @@ process CombineGVCFs {
   publishDir "${params.outdir}/04_GATK", mode: 'copy'
 
   input:  // [window, reads files ..., genome files ...]
-  tuple path(gvcf), path(genome_fasta), path(genome_dict), path(genome_fai)
+  tuple path(gvcf), path(gvcf_tbi), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // identified SNPs as a vcf file
-  path("*.vcf.gz")
+  tuple path("cohort.vcf.gz"), path("cohort.vcf.gz.tbi")
 
   script:
   """
@@ -121,10 +120,10 @@ process GenotypeGVCFs {
   publishDir "${params.outdir}/04_GATK", mode: 'copy'
 
   input:  // [window, reads files ..., genome files ...]
-  tuple path(all_combined_gvcf), path(genome_fasta), path(genome_dict), path(genome_fai)
+  tuple path(all_combined_gvcf), path(all_combined_gvcf_tbi), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // identified SNPs as a vcf file
-  path("*.vcf.gz")
+  tuple path("output.vcf.gz"), path("output.vcf.gz.tbi")
 
   script:
   """
@@ -173,10 +172,10 @@ process VariantFiltration {
   publishDir "$params.outdir/05_FilterSNPs", mode: 'copy'
 
   input:  // [sorted snp vcf, DP filter, genome files ... ]
-  tuple path(vcf_gz), val(dp), path(genome_fasta), path(genome_dict), path(genome_fai)
+  tuple path(vcf_gz), path(vcf_gz_tbi), val(dp), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // filtered to identified SNP variants
-  path("${vcf_gz.simpleName}.marked.vcf")
+  path("${vcf_gz.baseName}.marked.vcf")
 
   script:
   """
@@ -187,13 +186,13 @@ process VariantFiltration {
     --variant $vcf_gz \
     --filter-expression \"QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || DP > $dp\" \
     --filter-name "FAIL" \
-    --output ${vcf_gz.simpleName}.marked.vcf
+    --output ${vcf_gz.baseName}.marked.vcf
   """
 
   stub:
   """
   #! /usr/bin/env bash
-  touch ${vcf_gz.simpleName}.marked.vcf
+  touch ${vcf_gz.baseName}.marked.vcf
   """
 }
 

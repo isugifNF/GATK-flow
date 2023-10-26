@@ -4,8 +4,8 @@ nextflow.enable.dsl=2
 
 include { CreateSequenceDictionary;
           samtools_faidx;
-          calc_DPvalue;
-          keep_only_pass; } from '../../../modules/local/GATK.nf'
+          keep_only_pass;
+          bedtools_makewindows; } from '../../../modules/local/GATK.nf'
 
 include { pbmm2_index; 
           pbmm2_align;
@@ -15,7 +15,7 @@ include { pbmm2_index;
           calc_DPvalue as calc_DPvalue_LongRead;
           VariantFiltration as VariantFiltration_LongRead } from '../../../modules/local/LongReadseq.nf'
 
-include { MarkDuplicates as MarkDuplicates_RNA; } from '../../../modules/local/RNAseq.nf'
+include { MarkDuplicates as MarkDuplicates_LongRead; } from '../../../modules/local/RNAseq.nf'
 
 
 
@@ -36,17 +36,32 @@ workflow LONGREAD_VARIANT_CALLING {
   genome_ch 
     | (CreateSequenceDictionary & samtools_faidx )
 
-  mapped_ch = genome_ch
+  windows_ch = samtools_faidx.out
+  | bedtools_makewindows
+  | splitText(){it.trim()}
+
+  vcf_gz_ch = genome_ch
     | pbmm2_index
     | combine(cleanreads_ch)
     | pbmm2_align
-    | MarkDuplicates_RNA
+    | MarkDuplicates_LongRead
+    | combine(windows_ch)
+    | view
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
     | combine(samtools_faidx.out)
     | gatk_HaplotypeCaller_LongRead 
+    | map { n -> n.get(0) }
+    | collect 
+    | map { n -> [n]}
+
+  tbi_ch = gatk_HaplotypeCaller_LongRead.out
+    | map { n -> n.get(1) }
     | collect
-    | map { n -> [n] }
+    | map { n -> [n]}
+
+  vcf_gz_ch 
+    | combine(tbi_ch)
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
     | combine(samtools_faidx.out)
@@ -55,6 +70,7 @@ workflow LONGREAD_VARIANT_CALLING {
     | combine(CreateSequenceDictionary.out)
     | combine(samtools_faidx.out)
     | GenotypeGVCFs_LongRead
+    | map { n -> n.get(0) }
 
   CombineGVCFs_LongRead.out
     | calc_DPvalue_LongRead

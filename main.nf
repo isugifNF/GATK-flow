@@ -61,7 +61,8 @@ def parameters_valid = ['help','outdir',
   'genome','gtf','reads','reads_file','long_reads','invariant','seq',
   'singularity_img','docker_img','container_img',
   'gatk_app','star_app','star_index_params','star_index_file','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
-  'java_options','window','queueSize','queue-size','account', 'threads'] as Set
+  'pbmm2_app',
+  'java_options','window','queueSize','queue-size','account', 'threads', 'gatk_cluster_options'] as Set
 
 def parameter_diff = params.keySet() - parameters_valid
 if (parameter_diff.size() != 0){
@@ -77,7 +78,7 @@ workflow {
     exit 1, "[Missing File(s) Error] This pipeline requires a reference '--genome [GENOME.fasta]' \n"
   }
 
-  if (params.reads) {
+  if (params.seq != "longread") {
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
       | view {files -> "Read files : $files "}
   } else if (params.reads_file) {
@@ -85,8 +86,8 @@ workflow {
       | splitCsv(sep:'\t')
       | map { n -> [ n.getAt(0), [n.getAt(1), n.getAt(2)]] }
       | view {files -> "Read files : $files "}
-  } else if (params.long_reads) {
-    reads_ch = channel.fromPath(params.long_reads, checkIfExists:true)
+  } else if (params.seq == "longread") {
+    reads_ch = channel.fromPath(params.reads, checkIfExists:true)
       | view { files -> "Long read file : $files " }
   } else {
     exit 1, "[Missing File(s) Error] This pipeline requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"

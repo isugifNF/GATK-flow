@@ -94,7 +94,7 @@ process CombineGVCFs {
   tuple path(gvcf), path(gvcf_tbi), path(genome_fasta), path(genome_dict), path(genome_fai)
 
   output: // identified SNPs as a vcf file
-  tuple path("cohort.vcf.gz"), path("cohort.vcf.gz.tbi")
+  tuple path("cohort.g.vcf.gz"), path("cohort.g.vcf.gz.tbi")
 
   script:
   """

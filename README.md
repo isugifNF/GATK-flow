@@ -1,19 +1,8 @@
 # GATK
 
-
 A [Nextflow](https://www.nextflow.io/) wrapper for the [Genome Analysis Toolkit (GATK)](https://gatk.broadinstitute.org/hc/en-us), modified from the pipeline described in the Bioinformatic Workbook: [GATK Best Practices Workflow for DNA-Seq](https://bioinformaticsworkbook.org/dataAnalysis/VariantCalling/gatk-dnaseq-best-practices-workflow.html#gsc.tab=0).
 
-<details><summary>Pipeline DAG</summary>
-
-![](docs/gatk_dag.png)
-
-</details>
-
-<details><summary>Invariant DAG</summary>
-
-![](docs/invariant.png)
-
-</details>
+This Nextflow wrapper extends GATK's functionality from DNAseq data, to enabling variant calling from RNA-Seq and long-read sequencing data. It provides a comprehensive solution for diverse sequencing platforms, enhancing variant analysis capabilities.
 
 ## Installation
 
@@ -65,6 +54,9 @@ Usage:
     --genome                Genome fasta file, against which reads will be mapped to find SNPs
     --reads_file            Text file (tab delimited) with three columns [readname left_fastq.gz right_fastq.gz]. Will need full path for files.
 
+    --invariant             Output invariant sites [default:false]
+    --long_reads            Long read file in fastq.gz format, will need to specify glob (e.g. "*.fastq.gz")
+
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
@@ -76,6 +68,9 @@ Usage:
     --bedtools_app          Link to bedtools executable [default: 'bedtools']
     --datamash_app          Link to datamash executable [default: 'datamash']
     --vcftools_app          Link to vcftools executable [default: 'vcftools']
+    
+    --star_index_param      Parameters to pass to STAR index [default:'null']
+    --star_index_file       Optional: speedup by providing a prebuilt STAR indexed genome [default: 'false']
 
    Optional other arguments:
     --threads               Threads per process [default:4 for local, 16 for slurm]
@@ -115,7 +110,7 @@ nextflow run isugifNF/GATK \
 
 ## Test Dataset
 
-A simple test dataset (`test-data`) is available on [ISU Box](https://iastate.app.box.com/v/gatk-test-data). This dataset contains a small genome (portion of chr1, B73v5 ), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
+A simple DNAseq test dataset (`test-data`) is available on [ISU Box](https://iastate.app.box.com/v/gatk-test-data). This dataset contains a small genome (portion of chr1, B73v5 ), and Illumina short reads for 26 NAM lines (including B73) and B73Ab10 line (27 lines total).
 Only the reads that map to the region of the v5 genome is included, so that this can be tested quickly.
 There are examples of multiple files belonging to same NAM line as well as single file per NAM line to make sure both conditions works correctly.
 The end VCF file should have exactly 27 individuals (lines) in them.
@@ -132,7 +127,11 @@ ls -1 test-data/
 
 ## Running the Pipeline
 
-Fetch the pipeline and fetch the test-data folder.
+This pipeline can process DNAseq, RNAseq and PacBio long read data, which require different arguments and different input files. Please jump to the section based off of your input below.
+
+### GATK variant calling for DNAseq data
+
+Because this pipeline was initially developed to process DNAseq data, we have provided a test DNAseq dataset. You can fetch the pipeline and the test-data folder.
 
 ```
 # Fetch pipeline
@@ -212,9 +211,40 @@ BioSample05	/Users/jenchang/Maize_WGS_Build/test-data/fastq/BioSample05_R1.fastq
 
 </details>
 
-### Final Output
+#### DNAseq final output
 
-The Final output will be in a `results` folder. SNPs will be in the VCF file, probably the file with the longest name (e.g. `first-round_merged_snps-only_snp-only.pass-only.vcf`).
+The final output will be in a `results` folder. SNPs will be in the VCF file, probably the file with the longest name (e.g. `first-round_merged_snps-only_snp-only.pass-only.vcf`).
+
+```
+results/
+  |_ 01_MarkAdapters/            #<= folders contain intermediate files
+  |_ 02_MapReads/
+  |_ 03_PrepGATK/
+  |_ 04_GATK/
+  |_ 05_FilterSNPs/
+  |  |_ first-round_merged_snps-only_sorted_snp-only.pass-only.vcf     #<= final SNP file
+  |
+  |_ report.html
+  |_ timeline.html               # <= runtime information for all processes
+
+```
+### GATK variant calling for RNAseq
+
+In order to process RNAseq, we use the `STAR` aligner. To use the RNAseq variant calling pipeline, make the following parameter changes. 
+
+```
+nextflow run isugifNF/GATK \
+  --seq "rna" \
+  --genome "genome/genome.fa" \
+  --reads "data/*.{r1,r2}.fq.gz" \
+  --gtf "genome/genome.gtf" \
+  -profile slurm,singularity \
+  -resume
+```
+
+#### RNAseq final output
+
+The final output will be in a `results` folder. SNPs will be in the VCF file, probably the file with the longest name (e.g. `first-round_merged_snps-only_snp-only.pass-only.vcf`).
 
 ```
 results/
@@ -230,9 +260,41 @@ results/
 
 ```
 
+### GATK variant calling for long read data
+
+In order to process long read data obtained from the PacBio platform, we use the `pbmm2` aligner. To use the long read variant calling pipeline, make the following parameter changes. 
+
+```
+nextflow run isugifNF/GATK \
+  --seq "longread" \
+  --genome "genome/genome.fa" \
+  --reads "data/long-reads.fastq" \
+  -profile slurm,singularity \
+  -resume
+```
+
+### Long read final output
+
+The final output will be in a `results` folder. SNPs will be in the VCF file, probably the file with the longest name (e.g. `output_snp-only.pass-only.vcf`).
+
+```
+results/
+  |_ 02_MapReads/
+  |_ 03_PrepGATK/
+  |_ 04_GATK/
+  |_ 05_FilterSNPs/
+  |  |_ output_snp-only.pass-only.vcf     #<= final SNP file
+  |
+  |_ report.html
+  |_ timeline.html               # <= runtime information for all processes
+
+```
+
 ## Example Runs
 
 Some example runs provided to show nextflow output.
+
+### Example runs for DNAseq data
 
 <details><summary>See example run on <b>Ceres HPC</b> - last update: 14 April 2021</summary>
 
@@ -356,3 +418,98 @@ Succeeded   : 155
 ```
 
 </details>
+
+### Example run for RNAseq data
+
+<details><summary>see example run on <b>NOVA hpc</b> - last update: 8 august 2023</summary>
+
+runtime: 4 hours 38 minutes and 54 seconds.
+
+```
+$ module load gcc/7.3.0-xegsmw4 nextflow
+$ module load singularity
+$ nextflow run main.nf \
+  --seq "rna" \
+  --genome "genome/s_lycopersicum_chromosomes.3.00.fa" \
+  --reads "01_data/s*.{r1,r2}.fq.gz" \
+  --queuesize 25 \
+  --java_options "-xmx80g -xx:+useparallelgc -djava.io.tmpdir=/work/gif3/satheesh/2023_gatk_ms/tmp" \
+  --gtf "genome/itag3.0_gene_models.gtf" \
+  -profile slurm \
+  -resume
+
+N E X T F L O W  ~  version 22.10.4
+launching `/work/gif3/satheesh/programs/gatk_testing/gatk/main.nf` [chaotic_brahmagupta] dsl2 - revision: d07ccde0d9
+executor >  slurm (8304)
+[c4/48a5ae] process > fastqtosam (subsampled_p7r1)   [100%] 1 of 1 ✔
+[ee/c542a3] process > markilluminaadapters (1_sub... [100%] 1 of 1 ✔
+[f8/a5cd97] process > samtofastq_rna (1_subsample... [100%] 1 of 1 ✔
+[8b/c7dafa] process > star_index (s_lycopersicum_... [100%] 1 of 1 ✔
+[2c/f96408] process > star_align (1_subsampled_p7r1) [100%] 1 of 1 ✔
+[ee/72b0af] process > createsequencedictionary (s... [100%] 1 of 1 ✔
+[29/6454c2] process > samtools_faidx (s_lycopersi... [100%] 1 of 1 ✔
+[af/2ff081] process > mergebamalignment_rna (1_su... [100%] 1 of 1 ✔
+[51/589571] process > markduplicates (1_subsample... [100%] 1 of 1 ✔
+[4c/53bb96] process > splitncigarreads (1_subsamp... [100%] 1 of 1 ✔
+[ee/79c9ea] process > bedtools_makewindows (s_lyc... [100%] 1 of 1 ✔
+[f6/a83bb1] process > gatk_haplotypecaller_rna (s... [100%] 8287 of 8287, fai...
+[5c/efa2eb] process > merge_vcf                      [100%] 1 of 1 ✔
+[ec/6b40be] process > vcftools_snp_only (first_ro... [100%] 1 of 1 ✔
+[ab/604154] process > sortvcf (first_round_merged... [100%] 1 of 1 ✔
+[28/765be4] process > calc_dpvalue (first_round_m... [100%] 1 of 1 ✔
+[5b/0b530f] process > variantfiltration (first_ro... [100%] 1 of 1 ✔
+[99/878369] process > keep_only_pass (first_round... [100%] 1 of 1 ✔
+warn: failed to render execution report -- see the log file for details
+warn: failed to render execution timeline -- see the log file for details
+completed at: 08-aug-2023 21:37:02
+duration    : 4h 38m 54s
+cpu hours   : 6.3
+succeeded   : 8'303
+```
+
+
+
+</details>
+
+### Example run for long read data
+
+<details><summary>see example run on <b>NOVA hpc</b> - last update: 31 October 2023</summary>
+
+runtime: 41 minutes and 23 seconds.
+
+```
+$ module load gcc/7.3.0-xegsmw4 nextflow
+$ module load singularity
+$ nextflow run main.nf \
+  --seq "longread" \
+  --genome "genome/ecoli_2000001_3000000.fasta" \
+  --reads "01_Data/CP007799_2000001-3000000.fastq" \
+  --queueSize 25 \
+  --java_options "-Xmx80g -XX:+UseParallelGC -Djava.io.tmpdir=/work/gif3/satheesh/2023_GATK_ms/tmp" \
+  -profile slurm,singularity \
+  -resume
+
+N E X T F L O W  ~  version 22.10.4
+launching `/work/gif3/satheesh/programs/gatk_testing/gatk/main.nf` [chaotic_brahmagupta] dsl2 - revision: d07ccde0d9
+executor >  slurm (21)
+[c8/aa3601] process > LONGREAD_VARIANT_CALLING:Cr... [100%] 1 of 1 ✔
+[51/b76b1a] process > LONGREAD_VARIANT_CALLING:sa... [100%] 1 of 1 ✔
+[be/0cb73f] process > LONGREAD_VARIANT_CALLING:be... [100%] 1 of 1 ✔
+[26/4f4559] process > LONGREAD_VARIANT_CALLING:pb... [100%] 1 of 1 ✔
+[d1/78ce63] process > LONGREAD_VARIANT_CALLING:pb... [100%] 1 of 1 ✔
+[bb/1e7433] process > LONGREAD_VARIANT_CALLING:Ma... [100%] 1 of 1 ✔
+[aa/4c9f99] process > LONGREAD_VARIANT_CALLING:ga... [100%] 10 of 10 ✔
+[a6/142af0] process > LONGREAD_VARIANT_CALLING:Co... [100%] 1 of 1 ✔
+[fa/069ebb] process > LONGREAD_VARIANT_CALLING:Ge... [100%] 1 of 1 ✔
+[09/ea1b74] process > LONGREAD_VARIANT_CALLING:ca... [100%] 1 of 1 ✔
+[65/cc76dd] process > LONGREAD_VARIANT_CALLING:Va... [100%] 1 of 1 ✔
+[77/452275] process > LONGREAD_VARIANT_CALLING:ke... [100%] 1 of 1 ✔
+Completed at: 31-Oct-2023 14:39:44
+Duration    : 41m 23s
+CPU hours   : 5.7
+Succeeded   : 21
+```
+
+</details>
+
+

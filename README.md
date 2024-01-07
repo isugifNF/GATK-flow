@@ -42,42 +42,65 @@ nextflow run isugifNF/GATK --help
 ```
 N E X T F L O W  ~  version 20.10.0
 Launching `isugifNF/GATK` [big_kare] - revision: ca139b5b5f
-Usage:
-   The typical command for running the pipeline is as follows:
-   nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile slurm,singularity
-   nextflow run main.nf --genome GENOME.fasta --reads_file READ_PATHS.txt -profile slurm,singularity
+   Usage:
+   The typical command for running the pipeline are as follows:
+
+   DNAseq:
+     nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" --seq "dna" -profile singularity
+     nextflow run main.nf --genome GENOME.fasta --reads_file READ_PATHS.txt --seq "dna" -profile singularity
+
+   RNAseq:
+     nextflow run main.nf --genome GENOME.fasta --gtf "genes.gtf" --reads "*_{R1,R2}.fastq.gz" --seq "rna" -profile singularity
+  
+   PacBio Long Reads:
+     nextflow run main.nf --genome GENOME.fasta --long_reads "*.fastq.gz" --seq "longread" -profile singularity
 
    Mandatory arguments:
-    --genome                Genome fasta file, against which reads will be mapped to find SNPs
-    --reads                 Paired-end reads in fastq.gz format, will need to specify glob (e.g. "*_{R1,R2}.fastq.gz")
-    or
-    --genome                Genome fasta file, against which reads will be mapped to find SNPs
-    --reads_file            Text file (tab delimited) with three columns [readname left_fastq.gz right_fastq.gz]. Will need full path for files.
+    --seq                   Specify input sequence type as 'dna', 'rna', or 'longread' [default:'dna'].
+    --genome                Reference genome fasta file, against which reads will be mapped to find Variant sites
 
-    --invariant             Output invariant sites [default:false]
+   Read input arguments:
+    --reads                 Paired-end reads in fastq.gz format, will need to specify glob (e.g. "*_{R1,R2}.fastq.gz")
+    --reads_file            Text file (tab delimited) with three columns [readname left_fastq.gz right_fastq.gz]. Will need full path for files.
     --long_reads            Long read file in fastq.gz format, will need to specify glob (e.g. "*.fastq.gz")
+
+   Optional analysis arguments:
+    --invariant             Output invariant sites [default:false]
+    --gtf                   Gene Transfer Format file, only required for RNAseq input [default:false]
+    --window                Window size passed to bedtools for parallel GATK Haplotype calls [default:100000]
 
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
+    --container_img         Container image used for singularity and docker [default:'docker://ghcr.io/aseetharam/gatk:master']
     --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
     --docker_img            Docker image if [-profile docker] is set [default:'j23414/gatk4']
+    
+   GATK:
     --gatk_app              Link to gatk executable [default: 'gatk']
+    --java_options          Java options for gatk [default:'-Xmx80g -XX:+UseParallelGC -Djava.io.tmpdir=$TMPDIR']
+    --gatk_cluster_options  GATK cluster options [default:'false']
+    
+   Aligners:
     --bwamem2_app           Link to bwamem2 executable [default: 'bwa-mem2']
+    --star_app              Link to star executable [default: 'STAR']
+    --star_index_params     Parameters for star index [default: ' ']
+    --star_index_params     Parameters to pass to STAR index [default:'']
+    --star_index_file       Optional: speedup by providing a prebuilt STAR indexed genome [default: 'false']
+    --pbmm2_app             Link to pbmm2 executable [default: 'pbmm2']
+
+   Other:
     --samtools_app          Link to samtools executable [default: 'samtools']
     --bedtools_app          Link to bedtools executable [default: 'bedtools']
     --datamash_app          Link to datamash executable [default: 'datamash']
     --vcftools_app          Link to vcftools executable [default: 'vcftools']
-    
-    --star_index_param      Parameters to pass to STAR index [default:'null']
-    --star_index_file       Optional: speedup by providing a prebuilt STAR indexed genome [default: 'false']
 
    Optional other arguments:
-    --threads               Threads per process [default:4 for local, 16 for slurm]
-    --window                Window size passed to bedtools for gatk [default:100000]
-    --queueSize             Maximum jobs to submit to slurm [default:20]
+    --outdir                Output directory [default:'./GATK_Results']
+    --threads               Threads per process [default:4 for local, 16 for slurm] 
+    --queueSize             Maximum jobs to submit to slurm [default:40]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
-    --help
+    --help                  Print this help message
 
 NOTE: Genome name should not contain any periods before the ".fasta"
 ```

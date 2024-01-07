@@ -41,8 +41,6 @@ def helpMsg() {
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
     --container_img         Container image used for singularity and docker [default:'${params.container_img}']
-    --singularity_img       Singularity image if [-profile singularity] is set [default:'${params.singularity_img}']
-    --docker_img            Docker image if [-profile docker] is set [default:'${params.docker_img}']
     
    GATK:
     --gatk_app              Link to gatk executable [default: '$gatk_app']

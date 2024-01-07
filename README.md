@@ -73,8 +73,6 @@ Launching `isugifNF/GATK` [big_kare] - revision: ca139b5b5f
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
     --container_img         Container image used for singularity and docker [default:'docker://ghcr.io/aseetharam/gatk:master']
-    --singularity_img       Singularity image if [-profile singularity] is set [default:'shub://aseetharam/gatk:latest']
-    --docker_img            Docker image if [-profile docker] is set [default:'j23414/gatk4']
     
    GATK:
     --gatk_app              Link to gatk executable [default: 'gatk']

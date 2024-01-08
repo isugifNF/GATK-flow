@@ -76,7 +76,9 @@ process gatk_HaplotypeCaller {
     -R $genome_fasta \
     -I ${bam} \
     -O ${bam.simpleName}_${window.replace(':','_')}_gvcf.gz \
-    -ERC GVCF
+    -ERC GVCF \
+    ${gatk_HaplotypeCaller_params}
+
   """
 
   stub:

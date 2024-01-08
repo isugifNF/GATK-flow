@@ -213,7 +213,9 @@ process gatk_HaplotypeCaller {
    -R $genome_fasta \
    -I \$BAMFILES \
    -L $window \
-   --output \${WIND}.vcf
+   --output \${WIND}.vcf \
+    ${gatk_HaplotypeCaller_params}
+
   """
   
   stub:

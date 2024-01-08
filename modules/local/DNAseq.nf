@@ -149,7 +149,9 @@ process gatk_HaplotypeCaller {
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
-    --output ${window.replace(':','_')}.vcf
+    --output ${window.replace(':','_')}.vcf \
+    ${gatk_HaplotypeCaller_params}
+
   """
 
   stub:
@@ -178,7 +180,9 @@ process gatk_HaplotypeCaller_invariant {
     -R $genome_fasta \
     -I \$BAMFILES \
     -L $window \
-    --output ${bam.simpleName}_${window.replace(':','_')}.vcf
+    --output ${bam.simpleName}_${window.replace(':','_')}.vcf \
+    ${gatk_HaplotypeCaller_params}
+
   """
 
   stub:

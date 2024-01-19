@@ -50,7 +50,7 @@ workflow RNA_VARIANT_CALLING {
      | STAR_index
   }
 
-    mapped_ch = star_index_ch
+  mapped_ch = star_index_ch
     | combine(cleanreads_ch)
     | STAR_align
     | map { n -> [ n.getAt(0), n.getAt(1)]}
@@ -67,27 +67,21 @@ workflow RNA_VARIANT_CALLING {
     | combine(CreateSequenceDictionary.out)
     | MergeBamAlignment_RNA
 
-  if(params.invariant) {
-    allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?
-  } else {
-      MergeBamAlignment_ch
-      | MarkDuplicates
-      | combine(genome_ch)
-      | combine(samtools_faidx.out)
-      | combine(CreateSequenceDictionary.out)
-      | SplitNCigarReads
-
-      allbai_ch = SplitNCigarReads.out
-      | map { n -> n.getAt(2)}
-      | collect 
-      | map { n -> [n]}
-
-      allbambai_ch = SplitNCigarReads.out
-      | map { n -> n.getAt(1)}
-      | collect
-      | map { n -> [n]}
-      | combine(allbai_ch)
-  }
+  MergeBamAlignment_ch
+    | MarkDuplicates
+    | combine(genome_ch)
+    | combine(samtools_faidx.out)
+    | combine(CreateSequenceDictionary.out)
+    | SplitNCigarRead
+  allbai_ch = SplitNCigarReads.out
+    | map { n -> n.getAt(2)}
+    | collect
+    | map { n -> [n]}
+  allbambai_ch = SplitNCigarReads.out
+    | map { n -> n.getAt(1)}
+    | collect
+    | map { n -> [n]}
+    | combine(allbai_ch)
 
   // == Run Gatk Haplotype by interval window
   def split_outputs_ch = SplitNCigarReads.out.map { n -> [n[1], n[2]] }
@@ -100,41 +94,24 @@ workflow RNA_VARIANT_CALLING {
     | combine(CreateSequenceDictionary.out)
     | combine(samtools_faidx.out)
   
-  // If invariant, stop at output.vcf (all sites). If not, only keep SNPs with SNP filtering.
-  if(params.invariant){
+  reads_part1_ch
+    | gatk_HaplotypeCaller_RNA
+    | collect
+    | merge_vcf
+    | vcftools_snp_only
+    | combine(CreateSequenceDictionary.out)
+    | SortVcf
+    | calc_DPvalue
 
-    vcf_out_ch = reads_part1_ch
-      | gatk_HaplotypeCaller_invariant
-      | collect
-      | map { n -> [n] }
-      | combine(genome_ch)
-      | combine(CreateSequenceDictionary.out)
-      | combine(samtools_faidx.out)
-      | CombineGVCFs
-      | combine(genome_ch)
-      | combine(CreateSequenceDictionary.out)
-      | combine(samtools_faidx.out)
-      | GenotypeGVCFs
+  // == Filter resulting SNPs
+  vcf_out_ch = SortVcf.out
+    | combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")})
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | combine(samtools_faidx.out)
+    | VariantFiltration
+    | keep_only_pass
 
-  } else {
-    reads_part1_ch
-      | gatk_HaplotypeCaller_RNA
-      | collect
-      | merge_vcf
-      | vcftools_snp_only
-      | combine(CreateSequenceDictionary.out)
-      | SortVcf
-      | calc_DPvalue
-
-    // == Filter resulting SNPs
-    vcf_out_ch = SortVcf.out
-      | combine(calc_DPvalue.out.map{n-> n.replaceAll("\n","")})
-      | combine(genome_ch)
-      | combine(CreateSequenceDictionary.out)
-      | combine(samtools_faidx.out)
-      | VariantFiltration
-      | keep_only_pass
-  }
   emit:
   vcf = vcf_out_ch
 }

@@ -46,6 +46,7 @@ def helpMsg() {
     --gatk_app              Link to gatk executable [default: '$gatk_app']
     --java_options          Java options for gatk [default:'${java_options}']
     --gatk_cluster_options  GATK cluster options [default:'${params.gatk_cluster_options}']
+    --gatk_HaplotypeCaller_params  Additional parameters to pass to GATK HaplotypeCaller [default:'${params.gatk_HaplotypeCaller_params}']
     
    Aligners:
     --bwamem2_app           Link to bwamem2 executable [default: '$bwamem2_app']
@@ -79,7 +80,8 @@ if(params.help){
 def parameters_valid = ['help','outdir',
   'genome','gtf','reads','reads_file','long_reads','invariant','seq',
   'singularity_img','docker_img','container_img',
-  'gatk_app','star_app','star_index_params','star_index_file','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
+  'gatk_app','gatk_HaplotypeCaller_params',
+  'star_app','star_index_params','star_index_file','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',
   'pbmm2_app',
   'java_options','window','queueSize','queue-size','account', 'threads', 'gatk_cluster_options'] as Set
 

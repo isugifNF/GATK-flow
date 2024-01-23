@@ -148,6 +148,31 @@ process MarkDuplicates {
   """
 }
 
+process SortAndFixTags {
+  label 'gatk'
+  publishDir "${params.outdir}/03_PrepGATK"
+  input:
+  tuple path(bam), path(genome_fasta), path(genome_dict)
+  output:
+  tuple path("${bam.simpleName}_sorted.bam"), path("${bam.simpleName}_sorted.bai")
+  script:
+  """
+  #! /usr/bin/env bash
+  $gatk_app --java-options "${java_options}" SortSam \
+    --INPUT $bam \
+    --OUTPUT /dev/stdout \
+    --SORT_ORDER "coordinate" \
+    --CREATE_INDEX false \
+    --CREATE_MD5_FILE false \
+  | $gatk_app --java-options "${java_options}" SetNmMdAndUqTags \
+    --INPUT /dev/stdin \
+    --OUTPUT ${bam.simpleName}_sorted.bam \
+    --CREATE_INDEX true \
+    --CREATE_MD5_FILE true \
+    --REFERENCE_SEQUENCE $genome_fasta
+  """
+}
+
 process gatk_HaplotypeCaller {
   tag "$window"
   label 'gatk'

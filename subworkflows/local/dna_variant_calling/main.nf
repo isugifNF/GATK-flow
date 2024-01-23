@@ -21,6 +21,7 @@ include { SamToFastq as SamToFastq_DNA
           bwamem2_mem; 
           MergeBamAlignment as MergeBamAlignment_DNA;
           MarkDuplicates as MarkDuplicates_DNA;
+          SortAndFixTags as SortAndFixTags_DNA;
           gatk_HaplotypeCaller as gatk_HaplotypeCaller_DNA;
           gatk_HaplotypeCaller_invariant; } from '../../../modules/local/DNAseq.nf'
 
@@ -61,6 +62,9 @@ workflow DNA_VARIANT_CALLING {
     | combine(genome_ch)
     | combine(CreateSequenceDictionary.out)
     | MarkDuplicates_DNA
+    | combine(genome_ch)
+    | combine(CreateSequenceDictionary.out)
+    | SortAndFixTags_DNA
 
   if(params.invariant) {
     allbambai_ch = MergeBamAlignment.out // do these need to be merged by read?

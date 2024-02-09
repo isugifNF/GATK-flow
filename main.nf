@@ -37,6 +37,11 @@ def helpMsg() {
     --gtf                   Gene Transfer Format file, only required for RNAseq input [default:false]
     --window                Window size passed to bedtools for parallel GATK Haplotype calls [default:${params.window}]
 
+  Optional annotation of variants arguments:
+    --annotate              Determine if annotation steps will be executed [default: ${params.annotate}]
+    --gff                   Provide path to Gene Feature Format file as it's required for the annotation pipeline [default: ${params.gff}]
+    --vcf                   Provide path to VCF file, to skip variant calling to speedup annotation pipeline [default: ${params.vcf}]
+
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
@@ -79,6 +84,7 @@ if(params.help){
 
 def parameters_valid = ['help','outdir',
   'genome','gtf','reads','reads_file','long_reads','invariant','seq',
+  'annotate','gff','vcf',
   'singularity_img','docker_img','container_img',
   'gatk_app','gatk_haplotype_caller_params',
   'star_app','star_index_params','star_index_file','bwamem2_app','samtools_app','bedtools_app','datamash_app','vcftools_app',

@@ -8,6 +8,8 @@ include { RNA_VARIANT_CALLING } from './subworkflows/local/rna_variant_calling/m
 
 include { LONGREAD_VARIANT_CALLING } from './subworkflows/local/long_read_variant_calling/main.nf'
 
+include { SNP_EFF_ANNOTATION } from './subworkflows/local/variant_annotation/main.nf'
+
 def helpMsg() {
   log.info """
    Usage:
@@ -116,21 +118,29 @@ workflow {
   } else if (params.seq == "longread") {
     reads_ch = channel.fromPath(params.reads, checkIfExists:true)
       | view { files -> "Long read file : $files " }
+  } else if (params.annotate && params.gff && params.vcf) {
+    gff_ch = channel.fromPath(params.gff, checkIfExists:true)
+      | view {file -> "GFF file : $file "}
+    vcf_ch = channel.fromPath(params.vcf, checkIfExists:true)
+      | view {file -> "VCF file : $file "}
   } else {
     exit 1, "[Missing File(s) Error] This pipeline requires either paired-end read files as a glob '--reads [*_{r1,r2}.fq.gz]' or as a tab-delimited text file '--reads_file [READS_FILE.txt]'\n"
   }
 
-  if (params.seq == "dna"){
-    DNA_VARIANT_CALLING(genome_ch, reads_ch)
-  } else if (params.seq == "rna") {
-    if(params.gtf) {
-      gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
-    }else{
-      exit 1, "[Missing File(s) Error] This pipeline requires a gtf file '--gtf [GENOME.gtf]' \n"
+  if(!params.annotate){
+    if (params.seq == "dna"){
+      DNA_VARIANT_CALLING(genome_ch, reads_ch)
+    } else if (params.seq == "rna") {
+      if(params.gtf) {
+        gtf_ch = channel.fromPath(params.gtf, checkIfExists:true)
+      }else{
+        exit 1, "[Missing File(s) Error] This pipeline requires a gtf file '--gtf [GENOME.gtf]' \n"
+      }
+      RNA_VARIANT_CALLING(genome_ch, reads_ch, gtf_ch)
+    } else if (params.seq == "longread") {
+      LONGREAD_VARIANT_CALLING(genome_ch, reads_ch)
     }
-    
-    RNA_VARIANT_CALLING(genome_ch, reads_ch, gtf_ch)    
-  } else if (params.seq == "longread") {
-    LONGREAD_VARIANT_CALLING(genome_ch, reads_ch)
+  } else {
+    SNP_EFF_ANNOTATION(genome_ch, gff_ch, vcf_ch)
   }
 }

@@ -3,23 +3,23 @@
 nextflow.enable.dsl=2
 
 process snpEff_Build {
-  tag "${genome}"
+  tag "${genome_fasta.simpleName}"
   label 'snpeff'
   publishDir "${params.outdir}/snpEff_Build"
   
   input:
-  tuple val(genome), path(genome_fasta), path(gff_file)
+  tuple path(genome_fasta), path(gff_file)
 
   output:
-  tuple path("${genome}/snpEff.config"), path("${genome}/data/${genome}")
+  tuple path("${genome_fasta.simpleName}/snpEff.config"), path("${genome_fasta.simpleName}/data/${genome_fasta.simpleName}")
 
   script:
   """
-  mkdir -p data/${genome}
-  cp $gff_file data/${genome}/genes.gff
-  cp $fasta_file data/${genome}/sequences.fa
-  echo "${genome}.genome : ${genome}" >> snpEff.config
-  snpEff build -gff3 -v ${genome}
+  mkdir -p data/${genome_fasta.simpleName}
+  cp $gff_file data/${genome_fasta.simpleName}/genes.gff
+  cp $genome_fasta data/${genome_fasta.simpleName}/sequences.fa
+  echo "${genome_fasta.simpleName}.genome : ${genome_fasta.simpleName}" >> snpEff.config
+  snpEff build -gff3 -v ${genome_fasta.simpleName}
   """
 }
 
@@ -29,14 +29,20 @@ process snpEff_Annotate {
   publishDir "${params.outdir}/snpEff_Annotate"
 
   input:
-  tuple val(genome), path(vcf_file)
+  tuple path(config_file), path(snpeff_db), path(genome_fasta), path(vcf_file)
 
   output:
-  path("${vcf_file.simpleName}.eff.vcf")
-  # other files
-  
+  tuple path("${vcf_file.simpleName}.eff.vcf"), path("${vcf_file.simpleName}_summary.html"), path("${vcf_file.simpleName}_genes.txt")
+
   script:
   """
-  snpEff eff -v ${genome} -dataDir data/ $vcf_file > ${vcf_file.simpleName}.eff.vcf
+  snpEff eff \
+    -v ${genome_fasta.simpleName} \
+    -dataDir ${genome_fasta.simpleName}/data/ \
+    $vcf_file \
+    > ${vcf_file.simpleName}.eff.vcf
+
+  mv snpEff_summary.html ${vcf_file.simpleName}_summary.html
+  mv snpEff_genes.txt ${vcf_file.simpleName}_genes.txt
   """
 }

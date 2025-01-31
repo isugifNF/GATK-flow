@@ -11,15 +11,14 @@ process snpEff_Build {
   tuple path(genome_fasta), path(gff_file)
 
   output:
-  tuple path("${genome_fasta.simpleName}/snpEff.config"), path("${genome_fasta.simpleName}/data/${genome_fasta.simpleName}")
+  path("data/${genome_fasta.simpleName}")
 
   script:
   """
   mkdir -p data/${genome_fasta.simpleName}
   cp $gff_file data/${genome_fasta.simpleName}/genes.gff
   cp $genome_fasta data/${genome_fasta.simpleName}/sequences.fa
-  echo "${genome_fasta.simpleName}.genome : ${genome_fasta.simpleName}" >> snpEff.config
-  snpEff build -gff3 -v ${genome_fasta.simpleName}
+  java -jar /opt/snpEff/snpEff.jar build -configOption ${genome_fasta.simpleName}.genome=${genome_fasta.simpleName} -dataDir `pwd`/data/ -gff3 -v -noCheckCds -noCheckProtein ${genome_fasta.simpleName}
   """
 }
 
@@ -29,16 +28,17 @@ process snpEff_Annotate {
   publishDir "${params.outdir}/snpEff_Annotate"
 
   input:
-  tuple path(config_file), path(snpeff_db), path(genome_fasta), path(vcf_file)
+  tuple path(snpeff_db), path(genome_fasta), path(vcf_file)
 
   output:
   tuple path("${vcf_file.simpleName}.eff.vcf"), path("${vcf_file.simpleName}_summary.html"), path("${vcf_file.simpleName}_genes.txt")
 
   script:
   """
-  snpEff eff \
-    -v ${genome_fasta.simpleName} \
-    -dataDir ${genome_fasta.simpleName}/data/ \
+  java -jar /opt/snpEff/snpEff.jar eff \
+    -configOption ${snpeff_db}.genome=${snpeff_db} \
+    -v \
+    -dataDir ${snpeff_db} \
     $vcf_file \
     > ${vcf_file.simpleName}.eff.vcf
 

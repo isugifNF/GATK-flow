@@ -35,10 +35,14 @@ process snpEff_Annotate {
 
   script:
   """
+  mkdir data
+  ln -s `pwd`/${snpeff_db} data/.
+
   java -jar /opt/snpEff/snpEff.jar eff \
-    -configOption ${snpeff_db}.genome=${snpeff_db} \
+    -configOption ${genome_fasta.simpleName}.genome=${genome_fasta.simpleName} \
     -v \
-    -dataDir ${snpeff_db} \
+    -dataDir `pwd`/data/ \
+    ${genome_fasta.simpleName} \
     $vcf_file \
     > ${vcf_file.simpleName}.eff.vcf
 

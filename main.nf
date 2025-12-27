@@ -8,6 +8,8 @@ include { RNA_VARIANT_CALLING } from './subworkflows/local/rna_variant_calling/m
 
 include { LONGREAD_VARIANT_CALLING } from './subworkflows/local/long_read_variant_calling/main.nf'
 
+include { LONGREAD_RNA_VARIANT_CALLING } from './subworkflows/local/long_read_rna_variant_calling/main.nf'
+
 def helpMsg() {
   log.info """
    Usage:
@@ -24,7 +26,7 @@ def helpMsg() {
      nextflow run main.nf --genome GENOME.fasta --long_reads "*.fastq.gz" --seq "longread" -profile singularity
 
    Mandatory arguments:
-    --seq                   Specify input sequence type as 'dna', 'rna', or 'longread' [default:'${params.seq}'].
+    --seq                   Specify input sequence type as 'dna', 'rna', 'longread', or 'longread_rna' [default:'${params.seq}'].
     --genome                Reference genome fasta file, against which reads will be mapped to find Variant sites
 
    Read input arguments:
@@ -39,7 +41,7 @@ def helpMsg() {
 
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
-                            Available: local, slurm, singularity, docker [default:local]
+    Available: local, slurm, singularity, docker [default:local]
     --container_img         Container image used for singularity and docker [default:'${params.container_img}']
     
    GATK:
@@ -99,7 +101,7 @@ workflow {
     exit 1, "[Missing File(s) Error] This pipeline requires a reference '--genome [GENOME.fasta]' \n"
   }
 
-  if (params.seq != "longread") {
+  if (params.seq != "longread" && params.seq != "longread_rna") {
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
       | view {files -> "Read files : $files "}
   } else if (params.reads_file) {
@@ -107,7 +109,7 @@ workflow {
       | splitCsv(sep:'\t')
       | map { n -> [ n.getAt(0), [n.getAt(1), n.getAt(2)]] }
       | view {files -> "Read files : $files "}
-  } else if (params.seq == "longread") {
+  } else if (params.seq == "longread" || params.seq == "longread_rna") {
     reads_ch = channel.fromPath(params.reads, checkIfExists:true)
       | view { files -> "Long read file : $files " }
   } else {
@@ -122,9 +124,10 @@ workflow {
     }else{
       exit 1, "[Missing File(s) Error] This pipeline requires a gtf file '--gtf [GENOME.gtf]' \n"
     }
-    
-    RNA_VARIANT_CALLING(genome_ch, reads_ch, gtf_ch)    
+    RNA_VARIANT_CALLING(genome_ch, reads_ch, gtf_ch)
   } else if (params.seq == "longread") {
     LONGREAD_VARIANT_CALLING(genome_ch, reads_ch)
+  } else if (params.seq == "longread_rna") {
+    LONGREAD_RNA_VARIANT_CALLING(genome_ch, reads_ch)
   }
 }

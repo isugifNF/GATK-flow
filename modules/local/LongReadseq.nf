@@ -84,6 +84,7 @@ process gatk_HaplotypeCaller {
   stub:
   """
   touch ${bam.simpleName}_gvcf.gz
+  touch ${bam.simpleName}_gvcf.gz.tbi
   """
 }
 

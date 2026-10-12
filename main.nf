@@ -8,8 +8,14 @@ include { RNA_VARIANT_CALLING } from './subworkflows/local/rna_variant_calling/m
 
 include { LONGREAD_VARIANT_CALLING } from './subworkflows/local/long_read_variant_calling/main.nf'
 
+def versionMsg() {
+  "GATK-flow ${workflow.manifest.version}"
+}
+
 def helpMsg() {
   log.info """
+   ${versionMsg()}
+
    Usage:
    The typical command for running the pipeline are as follows:
 
@@ -68,7 +74,8 @@ def helpMsg() {
     --queueSize             Maximum jobs to submit to slurm [default:${params.queueSize}]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help                  Print this help message
- 
+    --version               Print the GATK-flow version and exit
+
 """
 }
 
@@ -77,7 +84,12 @@ if(params.help){
   exit 0
 }
 
-def parameters_valid = ['help','outdir',
+if(params.version){
+  log.info versionMsg()
+  exit 0
+}
+
+def parameters_valid = ['help','version','outdir',
   'genome','gtf','reads','reads_file','long_reads','invariant','seq',
   'singularity_img','docker_img','container_img',
   'gatk_app','gatk_haplotype_caller_params',

@@ -99,11 +99,20 @@ Launching `isugifNF/GATK` [big_kare] - revision: ca139b5b5f
     --queueSize             Maximum jobs to submit to slurm [default:40]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help                  Print this help message
+    --version               Print the GATK-flow version and exit
 
 NOTE: Genome name should not contain any periods before the ".fasta"
 ```
 
 </details>
+
+To print the GATK-flow pipeline version:
+
+```
+nextflow run isugifNF/GATK --version
+```
+
+This reports the GATK-flow version, while `nextflow -version` reports the installed Nextflow runtime version.
 
 ### Singularity Container
 
